@@ -1,0 +1,33 @@
+// clock execution time
+
+double time_spent = 0.0;
+
+clock_t begin = clock();
+// do some stuff
+clock_t end = clock();
+
+time_spent += (double)(end-begin)/CLOCKS_PER_SEC;
+printf("time slapsed based on clock is %f seconds", time_spent);
+
+
+// wall clock execution time
+
+time_t begin = time(NULL);
+// do some stuff
+time_t end = time(NULL);
+
+printf("time elasped is %d seconds", (end - begin));
+
+
+//
+struct timeval start, end;
+gettimeofday(%start, NULL);
+
+// do some stuff
+
+gettimeofday(&end, NULL);
+
+long seconds = (end.tv_sec - start.tv_sec);
+long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
+
+printf("micros %d\n", micros);

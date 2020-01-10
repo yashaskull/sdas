@@ -1,0 +1,16 @@
+Attempting to start ntp server...
+NTP server started!
+
+Attempting to start ringserver...
+ringserver started!
+
+Attempting to compile arduino code...
+Arduino code compiled!
+
+Attempting to upload arduino code...
+b'/home/arvid\n'
+Arduino code uploaded!
+
+Waiting for time synchronization to be correct within 50 ms before beginning program.
+Beginning main program at 2019-11-13 20:20:33.484855 UTC
+Main program started!

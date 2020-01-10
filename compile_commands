@@ -1,0 +1,371 @@
+while true; do vcgencmd measure_temp; sleep 1; done;
+
+
+arduino-cli compile --fqbn arduino:avr:mega /**MyFirstSketch.ino*/
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega MyFirstSketch 
+
+
+
+gcc -Wall -c *.c -I../libdali -L../libdali -ldali -I../libmseed -L../libmseed -lmseed -I../libezxml -L../libezxml -lezxml
+ar -cvq libdigitizer.a *o
+ 
+ 
+ 
+valgrind
+valgrind --tool=memcheck --leak-check=yes --show-reachable=yes ./gpio
+
+
+*******************************************************************************************************************************************************************
+if (DataSample[0] == 'a') // ADC1
+                {
+                    DataSample = RemoveChannelIdentifier(DataSample);
+                    int32_t int32_tDataSample = atoi(DataSample);
+                    if (SampleBlockADC1 != NULL)
+                        SampleBlockADC1[DataCounterADC1] = int32_tDataSample;
+                    DataCounterADC1++;
+                    if (DataCounterADC1 == 110 || DataCounterADC1 == 222)
+                    {
+                        // AVG
+                        int32_t AvgDataSamples = (SampleBlockADC1[DataCounterADC1-1] + SampleBlockADC1[DataCounterADC1-2] + SampleBlockADC1[DataCounterADC1-3] +
+                                                 SampleBlockADC1[DataCounterADC1-4] + SampleBlockADC1[DataCounterADC1-5])/5;
+
+                        SampleBlockADC1[DataCounterADC1] = AvgDataSamples;
+                        DataCounterADC1++;
+                        SampleBlockADC1[DataCounterADC1] = AvgDataSamples;
+                        DataCounterADC1++;
+
+                    }
+                    if (DataCounterADC1 == 334)
+                    {
+                        int32_t AvgDataSamples = (SampleBlockADC1[DataCounterADC1-1] + SampleBlockADC1[DataCounterADC1-2] + SampleBlockADC1[DataCounterADC1-3] +
+                                                SampleBlockADC1[DataCounterADC1-4] + SampleBlockADC1[DataCounterADC1-5])/5;
+
+                        SampleBlockADC1[DataCounterADC1] = AvgDataSamples;
+                        DataCounterADC1++;
+                    }
+                    free(DataSample);
+                }
+                else if (DataSample[0] == 'b') // ADC2
+                {
+                    DataSample = RemoveChannelIdentifier(DataSample);
+                    int32_t int32_tDataSample = atoi(DataSample);
+                    if (SampleBlockADC2 != NULL)
+                        SampleBlockADC2[DataCounterADC2] = int32_tDataSample;
+                    DataCounterADC2++;
+                    if (DataCounterADC2 == 110 || DataCounterADC2 == 222)
+                    {
+                        // AVG
+                        int32_t AvgDataSamples = (SampleBlockADC2[DataCounterADC2-1] + SampleBlockADC2[DataCounterADC2-2] + SampleBlockADC2[DataCounterADC2-3] +
+                                                 SampleBlockADC2[DataCounterADC2-4] + SampleBlockADC2[DataCounterADC2-5])/5;
+
+                        SampleBlockADC2[DataCounterADC2] = AvgDataSamples;
+                        DataCounterADC2++;
+                        SampleBlockADC2[DataCounterADC2] = AvgDataSamples;
+                        DataCounterADC2++;
+
+                    }
+                    if (DataCounterADC2 == 334)
+                    {
+                        int32_t AvgDataSamples = (SampleBlockADC2[DataCounterADC2-1] + SampleBlockADC2[DataCounterADC2-2] + SampleBlockADC2[DataCounterADC2-3] +
+                                                SampleBlockADC2[DataCounterADC2-4] + SampleBlockADC2[DataCounterADC2-5])/5;
+
+                        SampleBlockADC2[DataCounterADC2] = AvgDataSamples;
+                        DataCounterADC2++;
+                    }
+                    free(DataSample);
+
+                }
+                else if (DataSample[0] == 'c')
+                {
+                    DataSample = RemoveChannelIdentifier(DataSample);
+                    int32_t int32_tDataSample = atoi(DataSample);
+                    if (SampleBlockADC3 != NULL)
+                        SampleBlockADC3[DataCounterADC3] = int32_tDataSample;
+                    DataCounterADC3++;
+                    if (DataCounterADC3 == 110 || DataCounterADC3 == 222)
+                    {
+                        // AVG
+                        int32_t AvgDataSamples = (SampleBlockADC3[DataCounterADC3-1] + SampleBlockADC3[DataCounterADC3-2] + SampleBlockADC3[DataCounterADC3-3] +
+                                                 SampleBlockADC3[DataCounterADC3-4] + SampleBlockADC3[DataCounterADC3-5])/5;
+
+                        SampleBlockADC3[DataCounterADC3] = AvgDataSamples;
+                        DataCounterADC3++;
+                        SampleBlockADC3[DataCounterADC3] = AvgDataSamples;
+                        DataCounterADC3++;
+
+                    }
+                    if (DataCounterADC3 == 334)
+                    {
+                        int32_t AvgDataSamples = (SampleBlockADC3[DataCounterADC3-1] + SampleBlockADC3[DataCounterADC3-2] + SampleBlockADC3[DataCounterADC3-3] +
+                                                SampleBlockADC3[DataCounterADC3-4] + SampleBlockADC3[DataCounterADC3-5])/5;
+
+                        SampleBlockADC3[DataCounterADC3] = AvgDataSamples;
+                        DataCounterADC3++;
+                    }
+                    free(DataSample);
+
+                }
+                else if  (strcmp(DataSample, "*") == 0)
+                {
+                    //  Indication block has ended
+                    free(DataSample);
+                    break;
+                }
+                
+                
+****************************************************************************************************************************
+
+
+ if (DataCounterE == 45)
+                    {
+                        // AVG last 5 samples
+                        int32_t AvgDataSamples = (SampleBlockE[DataCounterE-1] + SampleBlockE[DataCounterE-2] + SampleBlockE[DataCounterE-3] +
+                                                 SampleBlockE[DataCounterE-4] + SampleBlockE[DataCounterE-5])/5;
+
+                       // printf("Hey\n");
+                        SampleBlockE[DataCounterE] = AvgDataSamples;
+                       // printf("Avg %d\n", AvgDataSamples);
+                        //printf("%d %d\n", DataCounterADC1, SampleBlockADC1[DataCounterADC1]);
+                        DataCounterE++;
+
+                    }
+                    if (DataCounterE == 91)
+                    {
+                        int32_t AvgDataSamples = (SampleBlockE[DataCounterE-1] + SampleBlockE[DataCounterE-2] + SampleBlockE[DataCounterE-3] +
+                                                 SampleBlockE[DataCounterE-4] + SampleBlockE[DataCounterE-5])/5;
+
+                      //  printf("hi\n");
+                        SampleBlockE[DataCounterE] = AvgDataSamples;
+                    //printf("%d %d\n", DataCounterADC1, SampleBlockADC1[DataCounterADC1]);
+                        DataCounterE++;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+************************************************************************************************
+// create mseed records for each channel and send to DL server
+        if(SampleBlockE!= NULL)
+        {
+            char streamID[50];
+            char StartDateTime[27];
+            char EndDateTime[27];
+            strcpy(msr_EW->channel, "HNE");
+            msr_EW->datasamples = SampleBlockE;
+
+            //if (FirstRun == 0)
+               // msr->starttime = starttime;
+
+            msr_srcname(msr_EW, streamID, 0);
+            strcat(streamID, "/MSEED");
+            hptime_t endtime = msr_endtime(msr_EW);
+
+            ms_hptime2isotimestr(msr_EW->starttime, StartDateTime, 1);
+            printf("%s    ", StartDateTime);
+            int PackedRecords = msr_pack(msr_EW, NULL, 1, verbose -1, dlconn, streamID);
+            if (PackedRecords <= 0)
+            {
+                fprintf(fp_log, "%s: Error packing mseed records for channel %s\n",GetLogTime(), streamID);
+            }
+            else
+                ChannelECounter = ChannelECounter + PackedRecords;
+
+            //printf("E Component\n");
+            //ms_hptime2isotimestr(starttime, StartDateTime,1);
+            ms_hptime2isotimestr(msr_EW->starttime, EndDateTime,1);
+            //printf("starttime: %s\n", StartDateTime);
+            //printf("calc starttime: %s\n", EndDateTime);
+            //ms_hptime2isotimestr(starttime-endtime_temp1, EndDateTime,1);
+           // endtime_temp1 = endtime;
+            //printf("diff: %s\n", EndDateTime);
+            free(SampleBlockE);
+            //printf("Records packed: %d\n", PackedRecords);
+           // printf("Channel E counter: %d\n", ChannelECounter);
+            //printf("*****************************************\n");
+        }
+        // check if channel 1 (z component) is ready to be saved into a mseed file
+        if (ChannelECounter == MAX_SAVE_NUM)
+        {
+            int LatestID = LatestPacketID(NULL, dlconn, fp_log);
+            if (LatestID == -1)
+                fprintf(fp_log, "%s: Error. Cannot save\n", GetLogTime());
+
+            else
+            {
+                int LastIDSaved = CreateMseedFile(dlconn, LatestPktIDSavedE, LatestID, reclen, StreamIDE, SaveFolderE, 'e', fp_log);
+                // write LastIDSaved to file
+                WriteToFile(FileNameE, LastIDSaved);
+                LatestPktIDSavedE = LastIDSaved;
+            }
+            ChannelECounter = 0;
+            // specify streamID to be saved, and range of pktid
+        }
+        /////////////////////////////////////////////////////////
+        // create mseed record for channel 2
+        if(SampleBlockN != NULL)
+        {
+            char streamID[50];
+            char StartDateTime[27];
+            char EndDateTime[27];
+            strcpy(msr_NS->channel, "HNN");
+            msr_NS->datasamples = SampleBlockN;
+
+            //if (FirstRun == 0)
+             //   msr->starttime = starttime;
+
+            msr_srcname(msr_NS, streamID, 0);
+            strcat(streamID, "/MSEED");
+            hptime_t endtime = msr_endtime(msr_NS);
+            ms_hptime2isotimestr(msr_NS->starttime, StartDateTime, 1);
+            printf("%s    ", StartDateTime);
+            int PackedRecords = msr_pack(msr_NS, NULL, 1, verbose -1, dlconn, streamID);
+            if (PackedRecords <= 0)
+            {
+                fprintf(fp_log, "%s: Error packing mseed records for channel %s\n", GetLogTime(), streamID);
+            }
+            else
+                ChannelNCounter = ChannelNCounter + PackedRecords;
+
+            //printf("N Component\n");
+
+           // ms_hptime2isotimestr(starttime, StartDateTime,1);
+            ms_hptime2isotimestr(msr_NS->starttime, EndDateTime,1);
+            //printf("starttime: %s\n", StartDateTime);
+           // printf("calc starttime: %s\n", EndDateTime);
+           // ms_hptime2isotimestr(starttime-endtime_temp2, EndDateTime,1);
+           // endtime_temp2 = endtime;
+            //  printf("diff: %s\n", EndDateTime);
+            free(SampleBlockN);
+            //printf("Channel N counter: %d\n", ChannelNCounter);
+            //printf("*****************************************\n");
+
+        }
+        if (ChannelNCounter == MAX_SAVE_NUM)
+        {
+            int LatestID = LatestPacketID(NULL, dlconn, fp_log);
+            if (LatestID == -1)
+                fprintf(fp_log, "%s: Error. Cannot save\n", GetLogTime());
+
+            else
+            {
+                int LastIDSaved = CreateMseedFile(dlconn, LatestPktIDSavedN, LatestID, reclen, StreamIDN, SaveFolderN, 'n', fp_log);
+                // write LastIDSaved to file
+                WriteToFile(FileNameN, LastIDSaved);
+                LatestPktIDSavedN = LastIDSaved;
+            }
+            ChannelNCounter = 0;
+        }
+        // create mseed record for channel 3
+        if(SampleBlockZ != NULL)
+        {
+
+            char streamID[50];
+            char StartDateTime[27];
+            char EndDateTime[27];
+            strcpy(msr_Z->channel, "HNZ");
+            msr_Z->datasamples = SampleBlockZ;
+
+           // if (FirstRun == 0)
+                //msr->starttime = starttime;
+            ms_hptime2isotimestr(msr_Z->starttime, StartDateTime, 1);
+            printf("%s\n", StartDateTime);
+            msr_srcname(msr_Z, streamID, 0);
+            strcat(streamID, "/MSEED");
+            hptime_t endtime = msr_endtime(msr_Z);
+
+            int PackedRecords = msr_pack(msr_Z, NULL, 1, verbose -1, dlconn, streamID);
+            if (PackedRecords <= 0)
+            {
+                fprintf(fp_log, "%s: Error packing mseed records for channel %s\n",GetLogTime(), streamID);
+            }
+            else
+                ChannelZCounter = ChannelZCounter + PackedRecords;
+
+
+            //printf("Z Component\n");
+
+            //ms_hptime2isotimestr(starttime, StartDateTime,1);
+            ms_hptime2isotimestr(msr_Z->starttime, EndDateTime,1);
+            //printf("starttime: %s\n", StartDateTime);
+           // printf("calc starttime: %s\n", EndDateTime);
+            //ms_hptime2isotimestr(starttime-endtime_temp3, EndDateTime,1);
+            //endtime_temp3 = endtime;
+            //  printf("diff: %s\n", EndDateTime);
+            free(SampleBlockZ);
+            //printf("Channel Z Counter: %d\n", ChannelZCounter);
+            //printf("*****************************************\n");
+        }
+        if (ChannelZCounter == MAX_SAVE_NUM)
+        {
+            int LatestID = LatestPacketID(NULL, dlconn, fp_log);
+            if (LatestID == -1)
+                fprintf(fp_log, "%s: Error. Cannot save\n", GetLogTime());
+
+            else
+            {
+                int LastIDSaved = CreateMseedFile(dlconn, LatestPktIDSavedZ, LatestID, reclen, StreamIDZ, SaveFolderZ, 'z', fp_log);
+                // write LastIDSaved to file
+                WriteToFile(FileNameZ, LastIDSaved);
+                LatestPktIDSavedZ = LastIDSaved;
+            }
+            ChannelZCounter = 0;
+        }
+        //free(SampleBlockADC1);
+        //free(SampleBlockADC2);
+       // free(SampleBlockADC3);
+        //printf("**********************************************************************************\n");
+        exit_counter++;
+        printf("counter: %d\n", exit_counter);
+        //if (exit_counter == 1200)
+            //return;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            **
+    hptime_t hptime=0;
+    hptime_t hptime_1=0;
+    hptime_t *phptime = &hptime;
+    hptime_t *phptime_1 = &hptime_1;
+
+    char d[27];
+    char diff[27] = "1970-01-01T00:19:00.000000";
+
+    char t1[27] = "2019-06-02T17:50:05.011000";
+
+    char t3[27] = "2019-06-02T14:08:05.011200";
+
+    char t2[27] = "2019-06-02T18:10:18.022000";
+
+    hptime_t diff_t = ms_timestr2hptime(diff);
+
+    hptime_t t1_t = ms_timestr2hptime(t1);
+    hptime_t t2_t = ms_timestr2hptime(t2);
+    hptime_t t3_t = ms_timestr2hptime(t3);
+
+    hptime_t temp = t2_t-t1_t;
+
+    hptime_t temp2 = t3_t - t1_t;
+
+    if (temp < diff_t)
+        printf("bad 1timestamp\n");
+
+    if (temp2 < diff_t)
+        printf("bad timestamp\n");
+    //printf("%lld\n", hptime_1 - hptime);

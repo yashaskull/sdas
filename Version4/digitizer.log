@@ -1,0 +1,39 @@
+Wed Nov 13 20:20:33 2019 : GPIO set up successfully
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : Connected to DataLink server @ localhost:16000!
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : MSR struct allocated
+Wed Nov 13 20:20:33 2019 : MSR initalized
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : USB drive at /media/usb0 mounted!
+Wed Nov 13 20:20:33 2019 : /media/usb0/TR_STASC_00_HNE/ directory already exists
+Wed Nov 13 20:20:33 2019 : /media/usb0/TR_STASC_00_HNN/ directory already exists
+Wed Nov 13 20:20:33 2019 : /media/usb0/TR_STASC_00_HNZ/ directory already exists
+gpio 17: 0
+gpio 17: 0
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : Timestamp queue created
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : Timestamp queue initialized!
+gpio 17: 0
+Wed Nov 13 20:20:33 2019 : Serial port opened successfully!
+gpio 17: 1
+Wed Nov 13 20:20:33 2019 : Serial Port settings set!
+gpio 17: 1
+gpio 17: 0
+Wed Nov 13 20:20:36 2019 : input/output serial lines flushed!
+
+
+gpio 17: 0
+gpio 17: 0
+gpio 17: 0
+Wed Nov 13 20:20:46 2019 : after set up: 0
+gpio 17: 0
+Wed Nov 13 20:20:47 2019 : TIMEOUT
+Wed Nov 13 20:20:47 2019 : after interrupt setup: 0
+Wed Nov 13 20:20:47 2019 : WiringPi set up successfully!
+before write to serial: 0
+Wed Nov 13 20:20:48 2019 : TIMEOUT
+Wed Nov 13 20:20:49 2019 : Triggered timestamp: 2019-11-13T20:20:49.293257
+after getting starttime: 1
+Wed Nov 13 20:20:49 2019  starttime: 2019-11-13T20:20:49.293257

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+
+
+# need only to compile once
+#echo "Compiling"
+#arduino-cli compile --fqbn arduino:avr:mega 3_channel
+#status=$?
+#echo $status
+
+log_file="log_file"
+
+if [ -e $log_file ];then
+	rm -rf log_file
+else
+	echo "file does not exist"
+fi
+
+# Run upload command. If  uploaded successfully, status will return 0. If not
+# status will return integer other than 0. 
+
+echo "$(date): Uploading arduino code..." >> log_file 
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega 3_channel
+status=$?
+
+echo $status
+if [ $status = 0 ];then
+	echo "$(date): Arduino code uploaded successfully!" >> log_file
+else
+	echo "$(date): err something went wrong" >> log_file
+fi
