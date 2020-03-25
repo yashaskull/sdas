@@ -75,7 +75,6 @@ long int blockCount = 1187;// 1187
 long int sampleCount = 0;
 //////////////////////////
 
-const byte interruptPin = 2;
 int skip = 0;
 
 String serialData;
@@ -84,6 +83,13 @@ bool print2Serial = false;
 volatile int stopPinChange = 0;
 void printData();
 void print_voltage();
+volatile int counter = 0;
+const byte interruptPin = 3;
+
+////////////////////
+
+////////////////////
+
 void setup() {
 
   Serial.begin(115200);
@@ -93,109 +99,36 @@ void setup() {
   pinMode(ADS1220_DRDY_PIN_1, INPUT);
   delay(5);
 
-  pinMode(ADS1220_CS_PIN_2, OUTPUT);
-  digitalWrite(ADS1220_CS_PIN_2, HIGH);
-  pinMode(ADS1220_DRDY_PIN_2, INPUT);
-  delay(5);
-
-  pinMode(ADS1220_CS_PIN_3, OUTPUT);
-  digitalWrite(ADS1220_CS_PIN_3, HIGH);
-  pinMode(ADS1220_DRDY_PIN_3, INPUT);
-  delay(5);
-
-  // TIMESTAMING PIN
-  // set pin high intially
-  pinMode(TIMESTAMP_PIN, OUTPUT);
-  digitalWrite(TIMESTAMP_PIN, LOW);
-
   // need to set pin 53 to OUTPUT for SPI communication
   pinMode(53, OUTPUT);// need to change
 
-  maxBlockRecord = packetCount*blockCount;
-  // Pin 2 used for stopping program
+  // count down timer and digital pin interrupt timer
+  ////////////////////////////////////
+  //setupTimer();
   //pinMode(interruptPin, INPUT);
-//  // ADS1220.set_pga_gain(2);
-  //ADS1220.SPI_Reset();
- 
-//ADS1220.begin();
-  //pinsInput();
+  //attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
+  ////////////////////////////////////
+  
+ // ADS1220.begin();
+  
+  pinsInput();
 }
 void loop()
 {
- // if (digitalRead(ADS1220_DRDY_PIN_3) == LOW)
-  //{
-    //readData(true);
-  //}
-
-  if (Serial.available())
+  if (digitalRead(ADS1220_DRDY_PIN_1) == LOW)
   {
-    ADS1220.begin();
-    // clear adc output buffer
-    // clear output serial buffer
-    // ignore first 100 samples
-    while (1)
-    {
-      if (digitalRead(ADS1220_DRDY_PIN_1) == LOW /**&& digitalRead(ADS1220_DRDY_PIN_2) == LOW && digitalRead(ADS1220_DRDY_PIN_3) == LOW*/)
-      {
-        sampleCount ++;
-        //Serial.println(2);
-        readData(false);
-        //Serial.flush();
-        //break;
-      }/// end if
-      if (sampleCount == 100)
-      {
-        sampleCount = 0;
-        Serial.flush();
-        digitalWrite(TIMESTAMP_PIN, HIGH);
-        break;
-      }
-    }
-    // input serial buffer
-    startCommand = Serial.read() - '0';
+    readData(true);
+    counter++;
   }
-
   
-  if (startCommand == 1)
-  { 
-    if (digitalRead(ADS1220_DRDY_PIN_1) == LOW /**&& digitalRead(ADS1220_DRDY_PIN_2) == LOW && digitalRead(ADS1220_DRDY_PIN_3) == LOW*/)
-    {
-      readData(true);
-      sampleCount ++;
-      
-    } // end if
-
-    if (sampleCount == maxBlockRecord) // 1187 packets = 1 block = 118700 samples
-    {
-      
-      if (digitalRead(TIMESTAMP_PIN) == LOW)
-      {
-        digitalWrite(TIMESTAMP_PIN, HIGH);
-
-      }
-      else if(digitalRead(TIMESTAMP_PIN) == HIGH)
-      {
-        digitalWrite(TIMESTAMP_PIN, LOW);
-        
-      }
-      else
-      {
-        // do nothing
-      }
-     
-      sampleCount = 0;
-      Serial.println("*");
-      //Serial.println(micros()-starttime);
-      //starttime = micros();
-    }// end if
-  }//end if
 }// end loop
 
 void readData(bool print2Serial)
-{
+{  
   SPI_RX_Buff_Ptr_1 = ADS1220.Read_Data_1();
   SPI_RX_Buff_Ptr_2 = ADS1220.Read_Data_2();
   SPI_RX_Buff_Ptr_3 = ADS1220.Read_Data_3();
+
 
   MSB = SPI_RX_Buff_Ptr_1[0];
   data = SPI_RX_Buff_Ptr_1[1];
@@ -204,71 +137,32 @@ void readData(bool print2Serial)
   bit24_N = (bit24_N << 8) | data;
   bit24_N = (bit24_N << 8) | LSB;
 
-  /////////////////////////////////////////////
-  MSB = SPI_RX_Buff_Ptr_2[0];
+/**
+   MSB = SPI_RX_Buff_Ptr_2[0];
   data = SPI_RX_Buff_Ptr_2[1];
   LSB = SPI_RX_Buff_Ptr_2[2];
   bit24_E = MSB;
   bit24_E = (bit24_E << 8) | data;
   bit24_E = (bit24_E << 8) | LSB;
 
-  ////////////////////////////////////////////
-  MSB = SPI_RX_Buff_Ptr_3[0];
+   MSB = SPI_RX_Buff_Ptr_3[0];
   data = SPI_RX_Buff_Ptr_3[1];
   LSB = SPI_RX_Buff_Ptr_3[2];
   bit24_Z = MSB;
-  bit24_Z = (bit24_Z << 8) | data;
-  bit24_Z = (bit24_Z << 8) | LSB;
-
+  bit24_Z = (bit24_N << 8) | data;
+  bit24_Z = (bit24_N << 8) | LSB;
+*/
   if (print2Serial == true) 
   {
-  Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
+    Serial.println((String)bit24_N);
+   //Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
+  //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
     //printData();
    // print_voltage();
   }
 }
-void programStop()
-{
-  //Set pin 53 to be input.
-  //pinMode(53, INPUT);
-  startCommand = 0;
-  //stopPinChange = 1;
-}
-void printData()
-{
-  //Serial.println(bit24_E);
-  // ew
-  //bit24_E = bit24_E_temp/avg_count;
-  Vout = (float)((bit24_E * VFSR2) / FSR);
-  // Serial.print(bit24_E);
-  // Serial.print("        ");
-  Serial.print(Vout, 5);
-  Serial.print("  ");
-  ////Serial.print((Vout - xZeroG) / xSensitivity, 5);
-  //Serial.print("    |  ");
- // Serial.print(" ");
 
-  // ns
-  //bit24_N = bit24_N_temp/avg_count;
-  Vout = (float)((bit24_N * VFSR2) / FSR);
- // Serial.print(bit24_N);
-  //Serial.print("        ");
-  Serial.print(Vout, 5);
-  Serial.print("  ");
-  //Serial.print((Vout - yZeroG) / ySensitivity, 5);
- // Serial.print(" ");
-  //Serial.print("    |  ");
-
-  // z
-  //bit24_Z = bit24_Z_temp/avg_count;
-  Vout = (float)((bit24_Z * VFSR1) / FSR);
-  //Serial.println(bit24_Z);
-  //Serial.print("          ");
-  Serial.println(Vout, 5);
-  //Serial.print("  ");
-  //Serial.println((Vout - zZeroG) / zSensitivity, 5);
-}
 
 void pinsInput(void)
 {
@@ -277,26 +171,36 @@ void pinsInput(void)
   pinMode(52, INPUT);
 }
 
-void print_voltage()
+// count down timer
+void setupTimer()
 {
- 
-  Vout = (float)((bit24_E * VFSR2) / FSR);
-  //Serial.print(Vout, 5);
-  //Serial.print("  ");
-  Serial.println(bit24_E);
- //Serial.print(" ");
+  cli();
+  //set timer1 interrupt at 1Hz
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;//initialize counter value to 0
+  // set compare match register for 1hz increments
+  OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be <65536)
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS12 and CS10 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
 
-  //Vout = (float)((bit24_N * VFSR2) / FSR);
-  //Serial.print(Vout, 5);
-  //Serial.print("  ");
-  //Serial.println(bit24_N);
-  //Serial.print(" ");
-//
-  Vout = (float)((bit24_Z * VFSR1) / FSR);
-  //Serial.println(Vout, 5);
-  //Serial.print("  ");
-  //Serial.println(bit24_Z);
+  sei();
 
 }
+// ISR for counter down timer
+ISR(TIMER1_COMPA_vect)
+{
+  Serial.println(counter);
+  counter = 0;
+}
 
-
+// ISR for digital pin interrupt
+void printCounter()
+{
+  Serial.println(counter);
+  counter = 0;
+}

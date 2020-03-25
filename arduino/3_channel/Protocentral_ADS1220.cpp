@@ -82,8 +82,8 @@ void Protocentral_ADS1220::begin()
   SPI.transfer(0x00);   
   */
   Config_Reg0 = 0x81; // 0x21 AINP=AIN0 AINN=AIN3  1 gain  pga disabled, 0x25 gain 4, 0x23 gain of 2, 0x01 AINP = AIN0 AINN = AIN1, 0x81 AINP =  AIN0, AINN = AVSS, 0xB1 AINP = AIN3 AINN = AVSS
-  Config_Reg1 = 0x64; // 0x84 330 SPS, A4 600 SPS, 0x04 20 SPS, 0x24 45 SPS, 0x44 90 SPS, 0x64 175 SPS/100, 0x84 330 SPS, 0xC4 1000 SPS, 0XB4 TURBO MODE @ 1200 SPS, 0xD4 tubo mode @ 2000
-  Config_Reg2 = 0x00; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
+  Config_Reg1 = 0x44; // 0x84 330 SPS/200, A4 600 SPS, 0x04 20 SPS, 0x24 45 SPS, 0x44 90 SPS, 0x64 175 SPS/100, 0x84 330 SPS, 0xC4 1000 SPS, 0XB4 TURBO MODE @ 1200 SPS, 0xD4 tubo mode @ 2000
+  Config_Reg2 = 0xC0; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
   Config_Reg2_Z = 0xC0;
   Config_Reg3 = 0x00;
   
@@ -337,14 +337,14 @@ uint8_t * Protocentral_ADS1220::Read_Data_1()
    static byte SPI_Buff[3];
   int i = 0;
   digitalWrite(ADS1220_CS_PIN_1,LOW);                         //Take CS low
-  delayMicroseconds(0.050);
-  //delayMicroseconds(100);
+  //delayMicroseconds(0.050);
+  delayMicroseconds(100);
   for (int i = 0; i < 3; i++)
   { 
       SPI_Buff[i] = SPI.transfer(SPI_MASTER_DUMMY);
   }
-  //delayMicroseconds(100);
-  delayMicroseconds(0.025);
+  delayMicroseconds(100);
+  //delayMicroseconds(0.025);
   digitalWrite(ADS1220_CS_PIN_1,HIGH);                  //  Clear CS to high
    
   return SPI_Buff;
@@ -353,16 +353,15 @@ uint8_t * Protocentral_ADS1220::Read_Data_2()
 {
   
    static byte SPI_Buff[3];
-
    digitalWrite(ADS1220_CS_PIN_2,LOW);                         //Take CS low
-   delayMicroseconds(0.050);
-    //delayMicroseconds(100);
+   //delayMicroseconds(0.050);
+   delayMicroseconds(100);
     for (int i = 0; i < 3; i++)
     { 
       SPI_Buff[i] = SPI.transfer(SPI_MASTER_DUMMY);
     }
-    //delayMicroseconds(100);
-   delayMicroseconds(0.025);
+    delayMicroseconds(100);
+  // delayMicroseconds(0.025);
    digitalWrite(ADS1220_CS_PIN_2,HIGH);                  //  Clear CS to high
      
   return SPI_Buff;
@@ -372,14 +371,14 @@ uint8_t * Protocentral_ADS1220::Read_Data_3()
   
    static byte SPI_Buff[3];
    digitalWrite(ADS1220_CS_PIN_3,LOW);                         //Take CS low
-   delayMicroseconds(0.050);
-    //delayMicroseconds(100);
+   //delayMicroseconds(0.050);
+    delayMicroseconds(100);
     for (int i = 0; i < 3; i++)
     { 
       SPI_Buff[i] = SPI.transfer(SPI_MASTER_DUMMY);
     }
-    //delayMicroseconds(100);
-   delayMicroseconds(0.025);
+    delayMicroseconds(100);
+   //delayMicroseconds(0.025);
    digitalWrite(ADS1220_CS_PIN_3,HIGH);                  //  Clear CS to high
      
   return SPI_Buff;
@@ -405,4 +404,3 @@ uint8_t * Protocentral_ADS1220::Read_Data_test()
   return SPI_Buff;
 }
 ///////////////////////////////////////////////////
-
