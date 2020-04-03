@@ -1,5 +1,5 @@
 #include "Protocentral_ADS1220.h"
-#include "SPI.h"
+//#include "SPI.h"
 
 #define PGA 1
 #define VREF1 3.305
@@ -105,13 +105,13 @@ void setup() {
   // count down timer and digital pin interrupt timer
   ////////////////////////////////////
   //setupTimer();
-  //pinMode(interruptPin, INPUT);
-  //attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
+  pinMode(interruptPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
   ////////////////////////////////////
   
- // ADS1220.begin();
+  ADS1220.begin();
   
-  pinsInput();
+  //pinsInput();
 }
 void loop()
 {
@@ -154,8 +154,8 @@ void readData(bool print2Serial)
 */
   if (print2Serial == true) 
   {
-    Serial.println((String)bit24_N);
-   //Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
+    //Serial.println((String)bit24_N);
+   Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
     //printData();
