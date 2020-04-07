@@ -29,6 +29,7 @@ void initialize_MSRecord(MSRecord **msr_temp, char network[11], char station[11]
 }
 
 
+/**
 
 void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
                int BlockLength, int Save2MseedFile, int Save2MseedFile_temp, char *SaveFolderUSBE, char *SaveFolderUSBN, char *SaveFolderUSBZ,
@@ -65,7 +66,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
 
     //printf("Press any key to begin\n");
     //while((getchar())!='\n'); // clear keyboard buffer
-    fprintf(fp_log, "before write to serial: %d\n",digitalRead(17));
+   // fprintf(fp_log, "before write to serial: %d\n",digitalRead(17));
 
     write_serial();
     while(!kbhit())
@@ -80,7 +81,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
             continue;
         }
 
-        fprintf(fp_log, "after getting starttime: %d\n",digitalRead(17));
+     //   fprintf(fp_log, "after getting starttime: %d\n",digitalRead(17));
         // temporary check
         // check gps timestamp
         // can use any streams assuming each channel has same start and endtime
@@ -213,7 +214,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
             strcat(SaveLocationNS, FileNameNS);
             strcat(SaveLocationZ, FileNameZ);
 
-            /* Open output file or use stdout */
+            /* Open output file or use stdout *//**
             if ( strcmp (SaveLocationEW, "-") == 0 )
             {
                 ofp_e = stdout;
@@ -227,7 +228,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
                 //return -1;
             }
 
-            /* Open output file or use stdout */
+            /* Open output file or use stdout *//**
             if ( strcmp (SaveLocationNS, "-") == 0 )
             {
                 ofp_n = stdout;
@@ -240,7 +241,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
                 //ms_log (1, "Cannot open output file %s: %s\n", msfile, strerror(errno));
                 //return -1;
             }
-            /* Open output file or use stdout */
+            /* Open output file or use stdout *//**
             if ( strcmp (SaveLocationZ, "-") == 0 )
             {
                 ofp_z = stdout;
@@ -471,13 +472,13 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
     return ;
 }// end of func
 
-
+*/
 
 void *blink_LED(void *arg)
 {
-    digitalWrite(22, HIGH);
+    //digitalWrite(22, HIGH);
     usleep(100000);
-    digitalWrite(22, LOW);
+    //digitalWrite(22, LOW);
 
     pthread_detach(pthread_self());
     return NULL;

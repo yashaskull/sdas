@@ -16,110 +16,108 @@
 #include "queue.h"
 #include "utils.h"
 
-struct DataQueue *CreateDataQueue(struct DataQueue *queue, FILE *fp)
+struct data_buffer *create_data_buffer(struct data_buffer *buffer, FILE *fp)
 {
-	queue = (struct DataQueue*)malloc(sizeof(struct DataQueue));
-	if (queue == NULL)
+	buffer = (struct data_buffer*)malloc(sizeof(struct data_buffer));
+	if (buffer == NULL)
 	{
-		fprintf(fp, "%s: Error. Cannot allocate memory for Data Queue \n", GetLogTime());
+		fprintf(fp, "%s: Error. Cannot allocate memory for Data buffer \n", GetLogTime());
 		fflush(fp);
 		return NULL;
 	}
-	queue->front = queue->rear=NULL;
-	return queue;
+	buffer->front_p = buffer->rear_p = NULL;
+	return buffer;
 }
 
-int InitializeDataQueue(struct DataQueue *queue, FILE *fp)
+int initialize_data_buffer(struct data_buffer *buffer, FILE *fp)
 {
-	struct DataNode *NewNode = (struct DataNode*)malloc(sizeof(struct DataNode));
-	if (NewNode == NULL)
+	struct data_buffer_node *new_data_buffer_node = (struct data_buffer_node*)malloc(sizeof(struct data_buffer_node));
+	if (new_data_buffer_node == NULL)
 	{
-		fprintf(fp, "%s: Error. Cannot allocate memory for a new data node \n", GetLogTime());
+		fprintf(fp, "%s: Error. Cannot allocate memory for a new data buffer node \n", GetLogTime());
 		fflush(fp);
 		return -1;
 	}
 	// Queue will always have 1 node
-	NewNode->DataSample = NULL;
-	NewNode->next = NULL;
-	queue->front = queue->rear = NewNode;
-	pthread_mutex_init(&queue->FrontLock, NULL);
-	pthread_mutex_init(&queue->RearLock, NULL);
+	new_data_buffer_node->sample = NULL;
+	new_data_buffer_node->next_p = NULL;
+	buffer->front_p = buffer->rear_p = new_data_buffer_node;
+	pthread_mutex_init(&buffer->front_lock, NULL);
+	pthread_mutex_init(&buffer->rear_lock, NULL);
 	return 1;
 
 }
 
-int InsertDataQueue(struct DataQueue *queue, char *sample, FILE *fp)
+int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp)
 {
+    struct data_buffer_node *data_buffer_node_temp = (struct data_buffer_node*)malloc(sizeof(struct data_buffer_node));
+    if (data_buffer_node_temp == NULL)
+    {
+        fprintf(fp, "%s: Error allocating memory for node to store data sample\n", GetLogTime());
+        fflush(fp);
+        return -1;
+    }
 
-    struct DataNode *temp = (struct DataNode*)malloc(sizeof(struct DataNode));
-  if (temp == NULL)
-  {
-  	fprintf(fp, "%s: Error allocating memory for node to store data sample\n", GetLogTime());
-  	fflush(fp);
-    return -1;
-  }
-
-  temp->DataSample = (char *)malloc(strlen(sample) + 1);
-  strcpy(temp->DataSample, sample);
+    data_buffer_node_temp->sample = (char *)malloc(strlen(sample) + 1);
+    strcpy(data_buffer_node_temp->sample, sample);
  	//printf("datasamples: %s\n", temp->DataSample);
- 	temp->next = NULL;
+ 	data_buffer_node_temp->next_p = NULL;
 
-  pthread_mutex_lock(&queue->RearLock);
-  if (queue->rear == NULL)
-  {
-  	queue->front = queue->rear = temp;
-    return 1;
-  }
+    pthread_mutex_lock(&buffer->rear_lock);
+    if (buffer->rear_p == NULL)
+    {
+        buffer->front_p = buffer->rear_p = data_buffer_node_temp;
+        return 1;
+    }
 
-  queue->rear->next = temp;
-  queue->rear = temp;
-  pthread_mutex_unlock(&queue->RearLock);
+  buffer->rear_p->next_p = data_buffer_node_temp;
+  buffer->rear_p = data_buffer_node_temp;
+  pthread_mutex_unlock(&buffer->rear_lock);
   return 1;
 }
 
-int GetDataSample(struct  DataQueue *queue, char **DataSample, FILE *fp)
+int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp)
 {
-    struct DataNode *temp = NULL;
-    struct DataNode *TempNode = NULL;
+    struct data_buffer_node *data_buffer_node_temp = NULL;
+    struct data_buffer_node *data_buffer_node_temp_temp = NULL;
 
-   pthread_mutex_lock(&queue->FrontLock);
-   temp = queue->front;
-   TempNode = queue->front->next;
-   if(TempNode == NULL)
-   {
-   		pthread_mutex_unlock(&queue->FrontLock);
+    pthread_mutex_lock(&buffer->front_lock);
+    data_buffer_node_temp = buffer->front_p;
+    data_buffer_node_temp_temp = buffer->front_p->next_p;
+    if(data_buffer_node_temp_temp == NULL)
+    {
+   		pthread_mutex_unlock(&buffer->front_lock);
     	return -1;
-   }
-   *DataSample = (char *)malloc(strlen(TempNode->DataSample)+1);
-   //*DataSample = malloc(strlen(TempNode->DataSample)+1);
-   if (DataSample == NULL)
-   {
-   		fprintf(fp, "%s: Could not allocate memory to store data sample\n", GetLogTime());
+    }
+    *sample = (char *)malloc(strlen(data_buffer_node_temp_temp->sample)+1);
+    //*DataSample = malloc(strlen(TempNode->DataSample)+1);
+    if (sample == NULL)
+    {
+        fprintf(fp, "%s: Could not allocate memory to store data sample\n", GetLogTime());
    		fflush(fp);
-   		return 0;
-   }
-   strcpy(*DataSample, TempNode->DataSample);
+        return 0;
+    }
+    strcpy(*sample, data_buffer_node_temp_temp->sample);
 
-   //*DataSample = (char *)malloc(sizeof(TempNode->DataSample));
-   //strcpy(*DataSample, TempNode->DataSample);
-   //printf("%s\n", data_ptr);
-   queue->front = TempNode;
-   free(TempNode->DataSample);
-   TempNode->DataSample = NULL;
-   free(temp);
-   pthread_mutex_unlock(&queue->FrontLock);
+    //*DataSample = (char *)malloc(sizeof(TempNode->DataSample));
+    //strcpy(*DataSample, TempNode->DataSample);
+    //printf("%s\n", data_ptr);
+    buffer->front_p = data_buffer_node_temp_temp;
+    free (data_buffer_node_temp_temp->sample);
+    data_buffer_node_temp_temp->sample = NULL;
+    free(data_buffer_node_temp);
+    pthread_mutex_unlock(&buffer->front_lock);
 
-	 //return data_ptr;
-	 return 1;
+    //return data_ptr;
+    return 1;
 }
 
-void DataQueueFree(struct DataQueue **queue)
+void free_data_buffer (struct data_buffer **buffer)
 {
-
-	if(queue !=NULL)
+	if(buffer != NULL)
 	{
-		free(*queue);
-		*queue = NULL;
+		free(*buffer);
+		*buffer = NULL;
 	}
 }
 

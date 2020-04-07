@@ -28,6 +28,6 @@ int serial_port_settings (void);
 int flush_serial(void);
 void write_serial(void);
 void close_serial(void);
- int SerialPort(void);
+ int serial_port_fd(void);
 
 #endif // SERIALUTILS_H_INCLUDED

@@ -105,8 +105,8 @@ void setup() {
   // count down timer and digital pin interrupt timer
   ////////////////////////////////////
   //setupTimer();
-  pinMode(interruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
+  //pinMode(interruptPin, INPUT);
+  //attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
   ////////////////////////////////////
   
   ADS1220.begin();
@@ -118,7 +118,13 @@ void loop()
   if (digitalRead(ADS1220_DRDY_PIN_1) == LOW)
   {
     readData(true);
-    counter++;
+  }
+
+  
+  if (counter == 200)
+  {
+    Serial.println("*");
+    counter = 0;
   }
   
 }// end loop
@@ -152,10 +158,11 @@ void readData(bool print2Serial)
   bit24_Z = (bit24_N << 8) | data;
   bit24_Z = (bit24_N << 8) | LSB;
 */
+  counter ++;
   if (print2Serial == true) 
   {
-    //Serial.println((String)bit24_N);
-   Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
+    Serial.println((String)bit24_N);
+   //Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
     //printData();

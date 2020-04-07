@@ -102,7 +102,7 @@ int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, 
 // writes miniSEED packets to a file
 void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
 {
-	
+
 	//printf("%s\n", record);
 	if ( fwrite(record, reclen, 1, (FILE *)ofp) != 1 )
   {
@@ -124,7 +124,7 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
 
   char *rawrec;
 
-  
+
   char *envvariable;
   char srcname[50];
 
@@ -333,7 +333,7 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
       return -1;
     }
   }
- 
+
 ///* Add Blank 100 Blockette for storing floating point sample rates */////////
  	if (!msr->Blkt100)
   {
@@ -382,16 +382,19 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
   if (headerswapflag)
     ms_gswap2 (HPdataoffset);
 
-	
+
   /* Determine the max data bytes and sample count */
   maxdatabytes = msr->reclen - dataoffset;
 
   if (msr->encoding == DE_STEIM1)
   {
+    printf("STEIMMMM1\n");
     maxsamples = (int)(maxdatabytes / 64) * STEIM1_FRAME_MAX_SAMPLES;
   }
   else if (msr->encoding == DE_STEIM2)
   {
+      printf("STEIMMMM2\n");
+
     maxsamples = (int)(maxdatabytes / 64) * STEIM2_FRAME_MAX_SAMPLES;
   }
   else
@@ -405,9 +408,11 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
   packoffset         = 0;
   if (packedsamples)
     *packedsamples = 0;
-		
 
 
+    printf("MAX SAMPLES: %d", maxsamples);
+
+    return -1;
   while ((msr->numsamples - totalpackedsamples) > maxsamples || flush)
   {
 
@@ -436,7 +441,7 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
     if (verbose > 0)
       ms_log (1, "%s: Packed %d samples\n", srcname, packsamples);
 
-		
+
 		// CALL MSRecord2DLServer
 
 		char date_time[27];
@@ -449,11 +454,11 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
 	//		**tag = 0;
 	//	}
 	//	else
-	//		**tag = 1;		
+	//		**tag = 1;
 		//Save packet to file
 		if (SaveFlag == 1)
 			record_handler(rawrec, msr->reclen, fp_save, fp_log);
-   	
+
     totalpackedsamples += packsamples;
     if (packedsamples)
       *packedsamples = totalpackedsamples;
@@ -467,7 +472,7 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
 		//char DateTime[27];
 		//ms_hptime2isotimestr(msr->starttime, DateTime, 1);
 		//printf("Updated starttime: %s\n", DateTime);
-		
+
     msr_update_header (msr, rawrec, headerswapflag, HPblkt1001, srcname, verbose);
 
     recordcnt++;
@@ -484,7 +489,7 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
   if (verbose > 2)
     ms_log (1, "%s: Packed %d total samples\n", srcname, totalpackedsamples);
 
-	
+
   free (rawrec);
 
   return recordcnt;

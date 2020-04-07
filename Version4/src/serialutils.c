@@ -33,6 +33,7 @@ char* read_serial(long timeout, FILE *fp)
     long total_sleep = 0;
 
     // skip any leading \r\n chars
+    // waits 1 second before timing out
     while (total_sleep < timeout && n_line_data < MAX_LINE_DATA)
     {
         //if (timeout == TIMEOUT_LARGE)
@@ -48,18 +49,20 @@ char* read_serial(long timeout, FILE *fp)
             line_data[n_line_data] = buf[0];
             n_line_data++;
             break;
-        } else
+        }
+        else
         {
 
-        	usleep(10000);
-          total_sleep += 10000;
+            usleep(10000);
+            total_sleep += 10000;
         }
     }
 
     if (total_sleep >= timeout)
     {
-    		fprintf(fp, "%s: TIMEOUT\n", GetLogTime());
-    		fflush(fp);
+            printf("serial timeout\n");
+    		//fprintf(fp, "%s: TIMEOUT\n", GetLogTime());
+    		//fflush(fp);
     		return NULL;
     }
 
@@ -103,17 +106,13 @@ char* read_serial(long timeout, FILE *fp)
 
     if (total_sleep >= timeout)
     {
-        fprintf(fp, "%s: TIMEOUT\n", GetLogTime());
-        fflush(fp);
+        printf("serial timeout\n");
+        //fprintf(fp, "%s: TIMEOUT\n", GetLogTime());
+        //fflush(fp);
         return NULL;
     }
 
-
-		return line_data;
-		//printf("%s\n", line_data);
-		//sample_32int = atoi(line_data);
-    //long value = atol(line_data);
-    //return (sample_32int);
+    return line_data;
 }
 
 int open_serial_port(void)
@@ -199,7 +198,7 @@ void close_serial(void)
 	close(fd_port);
 }
 
-int SerialPort(void)
+int serial_port_fd(void)
 {
 	return fd_port;
 }

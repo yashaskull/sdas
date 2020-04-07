@@ -1,78 +1,64 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="src/msrecord.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/queue.c" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1484" topLine="5" />
-		</Cursor>
-	</File>
-	<File name="src/utils.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1087" topLine="2" />
-		</Cursor>
-	</File>
-	<File name="main.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="16254" topLine="545" />
-		</Cursor>
-		<Folding>
-			<Collapse line="697" />
-			<Collapse line="710" />
-			<Collapse line="737" />
-			<Collapse line="892" />
-		</Folding>
-	</File>
-	<File name="src/serialutils.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/mseedfilesetup.h" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1562" topLine="5" />
-		</Cursor>
-	</File>
-	<File name="src/queue.c" open="1" top="1" tabpos="3" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5310" topLine="77" />
+			<Cursor1 position="4612" topLine="95" />
 		</Cursor>
 		<Folding>
 			<Collapse line="19" />
 			<Collapse line="32" />
 			<Collapse line="51" />
 			<Collapse line="116" />
-			<Collapse line="126" />
-			<Collapse line="144" />
-			<Collapse line="157" />
-			<Collapse line="166" />
 		</Folding>
 	</File>
-	<File name="src/queue.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="2" zoom_2="0">
+	<File name="src/msrecord.h" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="896" topLine="7" />
+			<Cursor1 position="634" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="src/msrecord.c" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
+	<File name="main.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="4188" topLine="135" />
+			<Cursor1 position="4714" topLine="192" />
+		</Cursor>
+	</File>
+	<File name="src/serialutils.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/msrecord.c" open="1" top="1" tabpos="4" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="15178" topLine="383" />
+		</Cursor>
+	</File>
+	<File name="src/mseedfilesetup.h" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1562" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/serialutils.c" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="src/utils.c" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="6337" topLine="10" />
+			<Cursor1 position="3619" topLine="0" />
 		</Cursor>
 		<Folding>
 			<Collapse line="4" />
 			<Collapse line="21" />
-			<Collapse line="48" />
-			<Collapse line="60" />
-			<Collapse line="71" />
-			<Collapse line="88" />
-			<Collapse line="117" />
-			<Collapse line="156" />
-			<Collapse line="177" />
-			<Collapse line="199" />
-			<Collapse line="278" />
 		</Folding>
+	</File>
+	<File name="src/queue.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="2" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="896" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="src/utils.h" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1087" topLine="0" />
+		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <sys/mount.h>
 #include <pigpio.h>
-#include <libconfig.h>
+//#include <libconfig.h>
 #include <dirent.h>
 
 /* Libraries */
@@ -55,8 +55,8 @@ int data_block_counter = 0;
 
 void TimeStamp(void);
 void timestamp_queue_free(void);
-void *HandleMSEEDRecord(void *arg);
-void FreeDataQueueSamples(void);
+void *read_serial_buffer(void *arg);
+void free_data_buffer_samples(void);
 int ParseConfigFile(void);
 void Configure_Streams();
 void *StatusLED_blink(void *arg);
@@ -65,7 +65,9 @@ void *StatusLED_blink(void *arg);
 
 // Data and TimeStamp structs
 struct  Q_timestamp *q_timestamp;
-struct DataQueue *qDataSample;
+
+// data buffer is a queue type implementation
+struct data_buffer *data_queue;
 
 // max 30 characters
 char SaveFolderUSBE[43];
@@ -73,7 +75,7 @@ char SaveFolderUSBN[43];
 char SaveFolderUSBZ[43];
 
 // Thread stop variables
-int StopHandleMseedRecord = 1;
+int stop_read_serial_buffer_thread = 1;
 int StopTimeStamp = 1;
 int StopTimeStampCont = 0;
 
@@ -87,7 +89,7 @@ char network[11];
 char station[11];
 char location[11];
 char dataquality;
-double samprate;
+int samprate;
 int8_t encoding; // INT32 encoding //FLOAT32 4
 int8_t byteorder; // MSB first
 int64_t numsamples = BLOCK_LENGTH_100;
@@ -144,19 +146,29 @@ char SourceNameZ[50];
 //
 int tag = 0;
 
+
+/////////////////////////
+char date_time [27];
+hptime_t  hptime_start = 0;
+hptime_t *hptime_p = &hptime_start;
+
+////////////////////////
 hptime_t hptime_temp = 0;
+
+int counter = 0;
 /* Main Program */
 int main()
 {
 
-
+/**
     // parse configuration file
     if (ParseConfigFile() == -1)
     {
         printf("Error parsing configuration file. Exiting\n");
         return -1;
     }
-
+*/
+/**
     // GPIO setup
     /////////////////
     if (GPIO_setup(fp_log) == -1)
@@ -168,7 +180,8 @@ int main()
     printf("gpio 17: %d\n",digitalRead(17));
     fprintf(fp_log, "%s: GPIO set up successfully\n", GetLogTime());
     ////////////////
-
+*/
+/**
     //////////////////////////////////////////////////////////////////////////
     /* The Ring server is the main storage of MSEED packets.
      * The DataLink (DL) protocol is used to send MSEED packets to the ringserver.
@@ -176,7 +189,7 @@ int main()
      * If the connection fails, the program exits and is restarted.
      * hostname = localhost, port = 16000
     */
-
+/**
 	if (connect2DLServer(&dlconn, fp_log) != 1)
 	{
 		fprintf(fp_log, "%s: Failed to connect to DL server. Please try again.\n", GetLogTime());
@@ -188,9 +201,9 @@ int main()
     fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
     fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", GetLogTime());
-
+*/
     /* Allocate memory for MSRecord Struct */
-
+/**
     if(!(msr_NS = msr_init(msr_NS)))
     {
         fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", GetLogTime());
@@ -236,7 +249,7 @@ int main()
     fflush(fp_log);
 
     /* Intialize MSRecord struct */
-    // NS
+/**    // NS
     initialize_MSRecord(&msr_NS, network, station,location, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
     // EW
     initialize_MSRecord(&msr_EW, network, station,location, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
@@ -248,7 +261,8 @@ int main()
     Configure_Streams();
         fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
-
+*/
+/**
     // if save2mseedfile is one, create save folders in usb drive if mounted
     if (Save2MseedFile == 1)
     {
@@ -274,11 +288,15 @@ int main()
             return -1;
         }
     }
+*/
 
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-    if(!(qDataSample = CreateDataQueue(qDataSample, fp_log)))
+    // data buffer is a queue type implementation
+    // Queue to store samples received from Arduino over serial
+    // Create and initialize
+    if(!(data_queue = create_data_buffer(data_queue, fp_log)))
     {
-        fprintf(fp_log, "%s: Could not allocate queue, out of memory? \n", GetLogTime());
+        //fprintf(fp_log, "%s: Could not allocate queue, out of memory? \n", GetLogTime());
+        /**
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
 
@@ -294,17 +312,17 @@ int main()
         if ( dlconn )
             dl_freedlcp (dlconn);
 
-        fclose(fp_log);
+        fclose(fp_log);*/
         return -1;
     }
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-
     /* Initialize timestamp queue */
-    if(InitializeDataQueue(qDataSample, fp_log) == -1)
+    if(initialize_data_buffer(data_queue, fp_log) == -1)
     {
-        fprintf(fp_log, "%s: Error in initializing queue. Try again\n", GetLogTime());
+        //fprintf(fp_log, "%s: Error in initializing queue. Try again\n", GetLogTime());
         // de-allocate timestamp queue
-        DataQueueFree(&qDataSample);
+        free_data_buffer(&data_queue);
+
+        /**
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -321,15 +339,16 @@ int main()
         if ( dlconn )
             dl_freedlcp (dlconn);
 
-		fclose(fp_log);
+		fclose(fp_log);*/
 		return -1;
     }
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+
+    printf("data buffer created and initialized\n");
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /* Create queue that contains timestamps */
 
-    if (!(q_timestamp = create_queue_timestamp(q_timestamp, fp_log)))
+ /**   if (!(q_timestamp = create_queue_timestamp(q_timestamp, fp_log)))
     {
         fprintf(fp_log, "%s: Could not allocate q, out of memory?\n", GetLogTime());
         // Free msr struct
@@ -359,7 +378,7 @@ int main()
         fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
     /* Initialize timestamp queue */
-    if(initialize_Queue_timestamp(q_timestamp, fp_log) == -1)
+ /**   if(initialize_Queue_timestamp(q_timestamp, fp_log) == -1)
     {
         fprintf(fp_log, "%s: Error in initializing queue. Try again\n", GetLogTime());
         // de-allocate timestamp queue
@@ -390,16 +409,18 @@ int main()
         fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
     /* Open serial port */
-   int port_rv = open_serial_port();
-	if (port_rv == -1)
+    if (open_serial_port() == -1)
 	{
-		fprintf(fp_log, "%s: Error opening port. Please try again\n", GetLogTime());
-		timestamp_queue_free();
+		//fprintf(fp_log, "%s: Error opening port. Please try again\n", GetLogTime());
+		//timestamp_queue_free();
 		// de-allocate timestamp queue
-        queue_timestamp_free(&q_timestamp);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
-
+        //queue_timestamp_free(&q_timestamp);
+        printf("1/n");
+        free_data_buffer_samples();
+        printf("2/n");
+        free_data_buffer(&data_queue);
+        printf("3/n");
+        /**
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -416,25 +437,26 @@ int main()
         if ( dlconn )
             dl_freedlcp (dlconn);
 
-        fclose(fp_log);
+        //fclose(fp_log);*/
 		return -1;
 	}
-	fprintf(fp_log, "%s: Serial port opened successfully!\n", GetLogTime());
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
+	//fprintf(fp_log, "%s: Serial port opened successfully!\n", GetLogTime());
 
 	// Serial port settings
-	int serial_port_settings_rv = serial_port_settings(); // Will add  option to change baud rate later
-	if (serial_port_settings_rv == -1)                           // Currently set at 19200. Will have to go into function
+	if (serial_port_settings() == -1)                           // Currently set at 19200. Will have to go into function
 	{                                                            // to manually change it.
-		fprintf(fp_log, "%s:  Error in setting port attributes. Please try again\n", GetLogTime());
+		//fprintf(fp_log, "%s:  Error in setting port attributes. Please try again\n", GetLogTime());
 
-        timestamp_queue_free();
+       // timestamp_queue_free();
         // de-allocate timestamp queue
-        queue_timestamp_free(&q_timestamp);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
+       // queue_timestamp_free(&q_timestamp);
 
+
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
+
+        /**
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -454,27 +476,26 @@ int main()
         // close serial port
         close_serial();
 
-		fclose(fp_log);
+		fclose(fp_log);*/
 		return -1;
 	}
-
-	fprintf(fp_log, "%s: Serial Port settings set!\n", GetLogTime());
-		        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-
+    printf("serial port and settings set\n");
+	//fprintf(fp_log, "%s: Serial Port settings set!\n", GetLogTime());
 
 	// allowing arduino to upload code..... This happens when serial port is opened
 	sleep(3); // find a way for the arduino to tell the pi when finishing uploading code
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+
 
 	if (flush_serial() < 0)
 	{
-		fprintf(fp_log, "%s: Error flushing input/output lines: %s\n",GetLogTime(), strerror(errno));
-        timestamp_queue_free();
+		//fprintf(fp_log, "%s: Error flushing input/output lines: %s\n",GetLogTime(), strerror(errno));
+        //timestamp_queue_free();
         // de-allocate timestamp queue
-        queue_timestamp_free(&q_timestamp);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
+        //queue_timestamp_free(&q_timestamp);
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
 
+        /**
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -490,32 +511,33 @@ int main()
 
         if ( dlconn )
             dl_freedlcp (dlconn);
-
+        */
         // close serial port
-        close_serial();
-        fclose(fp_log);
+      //  close_serial();
+      //  fclose(fp_log);
 		return -1;
 	}
-    fprintf(fp_log, "%s: input/output serial lines flushed!\n", GetLogTime());
-    fprintf(fp_log, "\n");
-    fprintf(fp_log, "\n");
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+	printf("serial flused\n");
 
-    sleep(10);
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+    //fprintf(fp_log, "%s: input/output serial lines flushed!\n", GetLogTime());
+    //fprintf(fp_log, "\n");
+    //fprintf(fp_log, "\n");
 
+    sleep(1);
     ///////////////////////////////////////////////
-    pthread_t CreateMSEEDRecordThreadID;
-    int ThreadRV = pthread_create(&CreateMSEEDRecordThreadID, NULL, HandleMSEEDRecord, NULL);
-    if(ThreadRV !=0)
+
+    pthread_t read_serial_buffer_thread_ID;
+    if (pthread_create(&read_serial_buffer_thread_ID, NULL, read_serial_buffer, NULL) != 0)
     {
         fprintf(fp_log, "%s: Error in creating thread: HandleMSEEDRecord\n", GetLogTime());
-         timestamp_queue_free();
+        // timestamp_queue_free();
         // de-allocate timestamp queue
-        queue_timestamp_free(&q_timestamp);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
+        //queue_timestamp_free(&q_timestamp);
 
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
+
+        /**
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -531,21 +553,23 @@ int main()
 
         if ( dlconn )
             dl_freedlcp (dlconn);
-
+        */
         // close serial port
-        close_serial();
-        fclose(fp_log);
+      //  close_serial();
+      //  fclose(fp_log);
         return -1;
 
     }
-    fflush(fp_log);
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+    //fflush(fp_log);
 
 
-
+    while (1)
+    {
+        sleep(1);
+    }
     /* Initiate interrupt function that timestamps */
 
-    fprintf(fp_log, "%s: after set up: %d\n",GetLogTime(), digitalRead(17));
+/**    fprintf(fp_log, "%s: after set up: %d\n",GetLogTime(), digitalRead(17));
     fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
     sleep(1);
@@ -585,7 +609,7 @@ int main()
 	fprintf(fp_log, "%s: WiringPi set up successfully!\n", GetLogTime());
     /* Flush input and output lines of the serial */
 
-    Digitizer(CheckMount, fp_log, q_timestamp, qDataSample, msr_NS, msr_EW, msr_Z, BLOCK_LENGTH_100,
+  /**  Digitizer(CheckMount, fp_log, q_timestamp, qDataSample, msr_NS, msr_EW, msr_Z, BLOCK_LENGTH_100,
              Save2MseedFile, Save2MseedFile_temp, SaveFolderUSBE, SaveFolderUSBN, SaveFolderUSBZ,
               StreamIDE, StreamIDN, StreamIDZ, reclen, dlconn, &tag);
 
@@ -632,11 +656,13 @@ int main()
     if (fp_log != NULL)
         fclose(fp_log);
 
-
+*/
+    printf("Hello world\n");
     return 0;
 
 }
 
+/**
 void TimeStamp(void)
 {
     //printf("in trig ts: %d\n",digitalRead(17));
@@ -660,7 +686,7 @@ void TimeStamp(void)
         //ms_hptime2isotimestr(hptime - hptime_temp, date_time,1);
        // printf("TS starttime: %s\n", date_time);
        //hptime_temp = hptime;
-      //  printf("***************************************\n");
+      //  printf("***************************************");
 
         ms_hptime2isotimestr(hptime, date_time,1);
         fprintf(fp_log, "%s: Triggered timestamp: %s\n", GetLogTime(), date_time);
@@ -681,7 +707,8 @@ void TimeStamp(void)
     }
 
 }
-
+*/
+/**
 void timestamp_queue_free(void)
 {
     while(q_timestamp->front != NULL)
@@ -693,47 +720,56 @@ void timestamp_queue_free(void)
             q_timestamp->rear = NULL;
     }
 }
+*/
 
-void FreeDataQueueSamples(void)
+void free_data_buffer_samples(void)
 {
-    while(qDataSample->front != NULL)
+    while(data_queue->front_p != NULL)
     {
-        struct DataNode *temp = qDataSample->front;
-        qDataSample->front = qDataSample->front->next;
-        free(temp->DataSample);
-        free(temp);
-        if(qDataSample->front == NULL)
-            qDataSample->rear = NULL;
+        struct data_buffer_node *data_buffer_node_temp = data_queue->front_p;
+        data_queue->front_p = data_queue->front_p->next_p;
+        free(data_buffer_node_temp->sample);
+        free(data_buffer_node_temp);
+        if(data_queue->front_p == NULL)
+            data_queue->rear_p = NULL;
     }
 }
 
-void *HandleMSEEDRecord(void *arg)
+
+void *read_serial_buffer(void *arg)
 {
+    printf("Spawning read serial buffer thread\n");
     for(;;)
     {
-        if (StopHandleMseedRecord == 1)
+        if (stop_read_serial_buffer_thread == 1)
         {
-
-            char *SerialData = read_serial(TIMEOUT, fp_log);
-
-            //if (SerialData != NULL)
-
-            if (SerialData == NULL)
+            char *serial_data = read_serial(TIMEOUT, fp_log);
+            if (serial_data == NULL)
             {
                 // Arduino still initializing
                 continue;
             }
-
+            if (strcmp(serial_data, "*") == 0)
+            {
+                // time stored in global cariable hptime_start
+                *hptime_p = current_utc_hptime();// time for mseed records
+                ms_hptime2isotimestr(hptime_start, date_time, 1);
+                printf("%s\n", date_time);
+            }
+            //printf("%s\n", serial_data);
+            /**
             if(InsertDataQueue(qDataSample, SerialData, fp_log) == -1)
             {
                 fprintf(fp_log, "%s: Could no insert sample in data queue\n", GetLogTime());
                 fflush(fp_log);
                 continue;
             }
+            */
         }
     }
 }
 
+/**
 int ParseConfigFile(void)
 {
 
@@ -888,7 +924,8 @@ int ParseConfigFile(void)
     config_destroy(cf);
     return 1;
 }
-
+*/
+/**
 void Configure_Streams()
 {
     strcpy(msr_NS->channel, ChannelNameNS);
@@ -931,6 +968,7 @@ void Configure_Streams()
     strcat(SaveFolderUSBZ, "/");
     strcat(SaveFolderUSBZ, SaveFolderZ);
 }
+*/
 
 
 

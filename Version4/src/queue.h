@@ -12,21 +12,22 @@
 
 /* External Buffer. Queue type implementation */
 // Node inside external buffer which stores data sample.
-struct DataNode
+// node in data queue
+struct data_buffer_node
 {
-	char *DataSample;
-	struct DataNode *next;
+	char *sample;
+	struct data_buffer_node *next_p;
+};
+
+// External buffer. Queue type implementation
+struct data_buffer
+{
+	struct data_buffer_node *front_p, *rear_p;
+	pthread_mutex_t front_lock;
+	pthread_mutex_t rear_lock;
 };
 
 
-// External buffer
-struct DataQueue
-{
-	struct DataNode *front, *rear;
-	pthread_mutex_t FrontLock;
-	pthread_mutex_t RearLock;
-
-};
 
 /* Queue definition for storing timestamps */
 struct Q_timestamp_node
@@ -43,11 +44,11 @@ struct Q_timestamp
 };
 
 /* External buffer functions */
-struct DataQueue *CreateDataQueue(struct DataQueue *queue, FILE *fp);
-int InitializeDataQueue(struct DataQueue *queue, FILE *fp);
-int InsertDataQueue(struct DataQueue *queue, char *sample, FILE *fp);
-int GetDataSample(struct  DataQueue *queue, char **DataSample, FILE *fp);
-void DataQueueFree(struct DataQueue **queue);
+struct data_buffer *create_data_buffer (struct data_buffer *buffer, FILE *fp);
+int initialize_data_buffer (struct data_buffer *buffer, FILE *fp);
+int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp);
+int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp);
+void free_data_buffer (struct data_buffer **buffer);
 
 int insert_timestamp_queue(struct Q_timestamp *q, hptime_t timestamp, FILE *fp);
 void queue_timestamp_free(struct Q_timestamp **queue);
