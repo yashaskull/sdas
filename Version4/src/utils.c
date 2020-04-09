@@ -1,7 +1,7 @@
 #include "utils.h"
 
 
-char *GetLogTime(void)
+char *get_log_time(void)
 {
 	time_t rawtime;
 	struct tm *timeinfo;
@@ -123,7 +123,7 @@ int TotalStreams(DLCP *dlconn, FILE *fp)
 	if ( (infolen = dl_getinfo (dlconn, "STREAMS", clientpattern, &infobuf, 0)) < 0 )
 	{
 		//dl_log (2, 0, "Problem requesting INFO STATUS from server\n");
-		fprintf (fp, "%s: Problem requesting INFO STATUS from server\n", GetLogTime());
+		fprintf (fp, "%s: Problem requesting INFO STATUS from server\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -133,7 +133,7 @@ int TotalStreams(DLCP *dlconn, FILE *fp)
   if ( (xmldoc = ezxml_parse_str (infobuf, infolen)) == NULL )
   {
   	//dl_log (2, 0, "info_handler(): XML parse error\n");
-		fprintf (fp, "%s: info_handler(): XML parse error\n", GetLogTime());
+		fprintf (fp, "%s: info_handler(): XML parse error\n", get_log_time());
 		fflush(fp);
     return -1;
   }
@@ -142,7 +142,7 @@ int TotalStreams(DLCP *dlconn, FILE *fp)
 	if ( ! (streamlist = ezxml_child (xmldoc, "StreamList")) )
   {
   	//dl_log (1, 0, "Cannot find StreamList element in XML response\n");
-		fprintf (fp, "%s: Cannot find StreamList element in XML response\n", GetLogTime());
+		fprintf (fp, "%s: Cannot find StreamList element in XML response\n", get_log_time());
 		fflush(fp);
     return -1;
   }
@@ -167,19 +167,19 @@ int GPIO_setup(FILE *fp)
 	if (wiringPiSetup () < 0)
 	{
        // printf("fail\n");
-		fprintf(fp, "%s: Unable to setup wiringPi: %s\n",GetLogTime(), strerror(errno));
+		fprintf(fp, "%s: Unable to setup wiringPi: %s\n",get_log_time(), strerror(errno));
 		fflush(fp);
 		return -1;
 	}
 	return 1;
 }
 
-int connect2DLServer(DLCP **dlconn, FILE *fp)
+int connect_dl_server(DLCP **dlconn, FILE *fp)
 {
 
 	if (!(*dlconn=dl_newdlcp("localhost", "prog")))
 	{
-		fprintf(fp, "%s: Cannot allocate Datalink descriptor\n", GetLogTime());
+		fprintf(fp, "%s: Cannot allocate Datalink descriptor\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -187,7 +187,7 @@ int connect2DLServer(DLCP **dlconn, FILE *fp)
 	/* connect to DL server */
 	if (dl_connect (*dlconn)<0)
 	{
-		fprintf(fp, "%s: Error connecting to DataLink server\n", GetLogTime());
+		fprintf(fp, "%s: Error connecting to DataLink server\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -208,7 +208,7 @@ int LatestPacketID(char *StreamName, DLCP *dlconn, FILE *fp)
 	if ( (infolen = dl_getinfo (dlconn, "STREAMS", clientpattern, &infobuf, 0)) < 0 )
 	{
 		//dl_log (2, 0, "Problem requesting INFO from server\n");
-		fprintf (fp, "%s: Problem requesting INFO from server\n", GetLogTime());
+		fprintf (fp, "%s: Problem requesting INFO from server\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -219,7 +219,7 @@ int LatestPacketID(char *StreamName, DLCP *dlconn, FILE *fp)
   	//dl_log (2, 0, "info_handler(): XML parse error\n");
   	if (infobuf != NULL)
         free(infobuf);
-    fprintf (fp, "%s: info_handler(): XML parse error\n", GetLogTime());
+    fprintf (fp, "%s: info_handler(): XML parse error\n", get_log_time());
     fflush(fp);
     return -1;
   }
@@ -232,7 +232,7 @@ int LatestPacketID(char *StreamName, DLCP *dlconn, FILE *fp)
   	{
   		//dl_log (1, 0, "Cannot find StreamList element in XML response\n");
   		free(infobuf);
-  		fprintf (fp, "%s: Cannot find StreamList element in XML response\n", GetLogTime());
+  		fprintf (fp, "%s: Cannot find StreamList element in XML response\n", get_log_time());
   		fflush(fp);
     	return -1;
   	}
@@ -247,7 +247,7 @@ int LatestPacketID(char *StreamName, DLCP *dlconn, FILE *fp)
   {
   	//dl_log (1, 0, "Cannot find StreamList element in XML response\n");
   	free(infobuf);
-  	fprintf (fp, "%s: Cannot find StreamList element in XML response\n", GetLogTime());
+  	fprintf (fp, "%s: Cannot find StreamList element in XML response\n", get_log_time());
   	fflush(fp);
     return -1;
   }
@@ -284,7 +284,7 @@ int MaximumPackets(DLCP *dlconn, FILE *fp)
   if ( (infolen = dl_getinfo (dlconn, "STREAMS", clientpattern, &infobuf, 0)) < 0 )
 	{
 		//dl_log (2, 0, "Problem requesting INFO from server\n");
-		fprintf (fp, "%s: Problem requesting INFO from server\n", GetLogTime());
+		fprintf (fp, "%s: Problem requesting INFO from server\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -293,7 +293,7 @@ int MaximumPackets(DLCP *dlconn, FILE *fp)
   if ( (xmldoc = ezxml_parse_str (infobuf, infolen)) == NULL )
   {
   	//dl_log (2, 0, "info_handler(): XML parse error\n");
-  	fprintf (fp, "%s: info_handler(): XML parse error\n", GetLogTime());
+  	fprintf (fp, "%s: info_handler(): XML parse error\n", get_log_time());
   	fflush(fp);
     return -1;
   }
@@ -301,7 +301,7 @@ int MaximumPackets(DLCP *dlconn, FILE *fp)
 	if ( ! (streamlist = ezxml_child (xmldoc, "Status")) )
   {
   	//dl_log (1, 0, "Cannot find StreamList element in XML response\n");
-  	fprintf(fp, "%s: Cannot find StreamList element in XML response\n", GetLogTime());
+  	fprintf(fp, "%s: Cannot find StreamList element in XML response\n", get_log_time());
   	fflush(fp);
     return -1;
   }

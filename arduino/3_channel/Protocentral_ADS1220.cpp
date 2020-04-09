@@ -83,8 +83,8 @@ void Protocentral_ADS1220::begin()
   */
   Config_Reg0 = 0x81; // 0x21 AINP=AIN0 AINN=AIN3  1 gain  pga disabled, 0x25 gain 4, 0x23 gain of 2, 0x01 AINP = AIN0 AINN = AIN1, 0x81 AINP =  AIN0, AINN = AVSS, 0xB1 AINP = AIN3 AINN = AVSS
   Config_Reg1 = 0x84; // 0x84 330 SPS/200, A4 600 SPS, 0x04 20 SPS, 0x24 45 SPS, 0x44 90 SPS, 0x64 175 SPS/100, 0x84 330 SPS, 0xC4 1000 SPS, 0XB4 TURBO MODE @ 1200 SPS, 0xD4 tubo mode @ 2000
-  Config_Reg2 = 0xC0; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
-  Config_Reg2_Z = 0xC0;
+  Config_Reg2 = 0x00; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
+  Config_Reg2_Z = 0x00;
   Config_Reg3 = 0x00;
   
 

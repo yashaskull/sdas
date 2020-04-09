@@ -22,7 +22,6 @@ int inputAvailable(int fn_io)
 
 char* read_serial(long timeout, FILE *fp)
 {
-
     static char line_data[33];
     //static char *line_data;
     static int n_line_data;

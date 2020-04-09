@@ -94,6 +94,19 @@ void setup() {
 
   Serial.begin(115200);
 
+  while (!Serial.available())
+  {
+    delay(1000);
+    // do nothing
+  }
+
+  while(Serial.available())
+  {
+    Serial.read();
+  }
+  delay(500);
+
+  
   pinMode(ADS1220_CS_PIN_1, OUTPUT);
   digitalWrite(ADS1220_CS_PIN_1, HIGH);
   pinMode(ADS1220_DRDY_PIN_1, INPUT);
@@ -110,8 +123,8 @@ void setup() {
   ////////////////////////////////////
   
   ADS1220.begin();
-  
   //pinsInput();
+  Serial.println("*");
 }
 void loop()
 {
@@ -120,12 +133,12 @@ void loop()
     readData(true);
   }
 
-  
+  /**
   if (counter == 200)
   {
     Serial.println("*");
     counter = 0;
-  }
+  }*/
   
 }// end loop
 
@@ -161,8 +174,8 @@ void readData(bool print2Serial)
   counter ++;
   if (print2Serial == true) 
   {
-    Serial.println((String)bit24_N);
-   //Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
+    //Serial.println((String)bit24_N);
+   Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
     //printData();

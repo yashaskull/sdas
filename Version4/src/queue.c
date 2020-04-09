@@ -21,7 +21,7 @@ struct data_buffer *create_data_buffer(struct data_buffer *buffer, FILE *fp)
 	buffer = (struct data_buffer*)malloc(sizeof(struct data_buffer));
 	if (buffer == NULL)
 	{
-		fprintf(fp, "%s: Error. Cannot allocate memory for Data buffer \n", GetLogTime());
+		fprintf(fp, "%s: Error. Cannot allocate memory for Data buffer \n", get_log_time());
 		fflush(fp);
 		return NULL;
 	}
@@ -34,7 +34,7 @@ int initialize_data_buffer(struct data_buffer *buffer, FILE *fp)
 	struct data_buffer_node *new_data_buffer_node = (struct data_buffer_node*)malloc(sizeof(struct data_buffer_node));
 	if (new_data_buffer_node == NULL)
 	{
-		fprintf(fp, "%s: Error. Cannot allocate memory for a new data buffer node \n", GetLogTime());
+		fprintf(fp, "%s: Error. Cannot allocate memory for a new data buffer node \n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -53,16 +53,14 @@ int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp)
     struct data_buffer_node *data_buffer_node_temp = (struct data_buffer_node*)malloc(sizeof(struct data_buffer_node));
     if (data_buffer_node_temp == NULL)
     {
-        fprintf(fp, "%s: Error allocating memory for node to store data sample\n", GetLogTime());
-        fflush(fp);
+        //fprintf(fp, "%s: Error allocating memory for node to store data sample\n", get_log_time());
+        //fflush(fp);
         return -1;
     }
 
     data_buffer_node_temp->sample = (char *)malloc(strlen(sample) + 1);
     strcpy(data_buffer_node_temp->sample, sample);
- 	//printf("datasamples: %s\n", temp->DataSample);
  	data_buffer_node_temp->next_p = NULL;
-
     pthread_mutex_lock(&buffer->rear_lock);
     if (buffer->rear_p == NULL)
     {
@@ -84,6 +82,8 @@ int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp)
     pthread_mutex_lock(&buffer->front_lock);
     data_buffer_node_temp = buffer->front_p;
     data_buffer_node_temp_temp = buffer->front_p->next_p;
+
+    // buffer empty
     if(data_buffer_node_temp_temp == NULL)
     {
    		pthread_mutex_unlock(&buffer->front_lock);
@@ -91,9 +91,10 @@ int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp)
     }
     *sample = (char *)malloc(strlen(data_buffer_node_temp_temp->sample)+1);
     //*DataSample = malloc(strlen(TempNode->DataSample)+1);
+    // failed to allocate memory to store sample. exit program
     if (sample == NULL)
     {
-        fprintf(fp, "%s: Could not allocate memory to store data sample\n", GetLogTime());
+        fprintf(fp, "%s: Could not allocate memory to store data sample\n", get_log_time());
    		fflush(fp);
         return 0;
     }
@@ -126,7 +127,7 @@ int initialize_Queue_timestamp(struct Q_timestamp *queue, FILE *fp)
 	struct Q_timestamp_node *new_node = (struct Q_timestamp_node*)malloc(sizeof(struct Q_timestamp_node));
 	if(new_node == NULL)
 	{
-		fprintf(fp, "%s: Cannot allocate memory for a new node\n", GetLogTime());
+		fprintf(fp, "%s: Cannot allocate memory for a new node\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -144,7 +145,7 @@ struct Q_timestamp *create_queue_timestamp(struct Q_timestamp *queue, FILE *fp)
 	queue = (struct Q_timestamp*)malloc(sizeof(struct Q_timestamp));
 	if(queue == NULL)
 	{
-		fprintf(fp, "%s: Cannot allocate memory\n", GetLogTime());
+		fprintf(fp, "%s: Cannot allocate memory\n", get_log_time());
 		fflush(fp);
 		return NULL;
 	}
@@ -167,7 +168,7 @@ int insert_timestamp_queue(struct Q_timestamp *q, hptime_t timestamp, FILE *fp)
 	struct Q_timestamp_node *temp = (struct Q_timestamp_node*)malloc(sizeof(struct Q_timestamp_node));
   if (temp == NULL)
   {
-  	fprintf(fp, "%s: Error allocating memory for node to store timestamp\n", GetLogTime());
+  	fprintf(fp, "%s: Error allocating memory for node to store timestamp\n", get_log_time());
   	fflush(fp);
     return -1;
   }

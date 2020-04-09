@@ -26,7 +26,7 @@
 static flag verbose = 1;
 flag overwrite;
 //int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen );
-void initialize_MSRecord( MSRecord **msr_temp, char network[11], char station[11], char location[11], char dataquality, double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen);
+void initialize_msrecord( MSRecord **msr_temp, char network[11], char station[11], char location[11], char channelname[3], char dataquality, double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen);
 
 
 void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
@@ -34,5 +34,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
                char StreamIDE[50], char StreamIDN[50], char StreamIDZ[50], int reclen, DLCP *dlconn, int *tag);
 
 void *blink_LED(void *arg);
+
+char *generate_stream_id(MSRecord *msr, char *stream_id);
 
 #endif // MSRECORD_H_INCLUDED

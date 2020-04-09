@@ -10,12 +10,12 @@
 #include <ctype.h>
 #include <math.h>
 #include <sys/time.h>
-#include <wiringPi.h>
+#include <wiringPi.h> // -lwiringPi
 #include <wiringSerial.h>
-#include <pthread.h>
+#include <pthread.h> // -lpthread
 #include <sys/mount.h>
 #include <pigpio.h>
-//#include <libconfig.h>
+#include <libconfig.h> // for creating config files. sudo apt-get install libconfig-dev.. linker: -lconfig
 #include <dirent.h>
 
 /* Libraries */
@@ -57,7 +57,7 @@ void TimeStamp(void);
 void timestamp_queue_free(void);
 void *read_serial_buffer(void *arg);
 void free_data_buffer_samples(void);
-int ParseConfigFile(void);
+int parse_config_file(FILE *fp);
 void Configure_Streams();
 void *StatusLED_blink(void *arg);
 
@@ -80,9 +80,9 @@ int StopTimeStamp = 1;
 int StopTimeStampCont = 0;
 
 // MSR definitions
-MSRecord *msr_NS;
-MSRecord *msr_EW;
-MSRecord *msr_Z;
+MSRecord *msr_NS; // North South
+MSRecord *msr_EW; // East West
+MSRecord *msr_Z; // Z or Vertical
 
 // MSR Struct variables
 char network[11];
@@ -96,29 +96,25 @@ int64_t numsamples = BLOCK_LENGTH_100;
 char sampletype; // 32-bit integer, f - float
 int reclen;
 
-// digitizer log file
-char *LogFile = "digitizer.log";
-
 // usb drive location to store mseed files
-char MseedVolume[15];
+char mseed_volume[15];
 
 // flag used to create and store mseed files. 1 = create, 0 = don't create
-int Save2MseedFile;
-int Save2MseedFile_temp;
+int save_mseed_file;
+int save_mseed_file_temp;
 
 // Channel name from the sensor
-char ChannelNameEW[3];
-char ChannelNameNS[3];
-char ChannelNameZ[3];
+char channel_name_ew[3];
+char channel_name_ns[3];
+char channel_name_z[3];
 
 
-
+FILE *fp_log;
 // usb mount command
 char *MountCommand = "mount | grep -q ";
 char CheckMount[70];
 
 // log file definition
-FILE *fp_log;
 
 // datalink connection definition
 DLCP *dlconn;
@@ -134,14 +130,14 @@ char *SaveFolderN;
 char *SaveFolderZ;
 
 // stream id for each channel in sensor
-char StreamIDE[50];
-char StreamIDN[50];
-char StreamIDZ[50];
+char stream_id_ew[50];
+char stream_id_ns[50];
+char stream_id_z[50];
 
 // source name for each channel in sensor
-char SourceNameE[50];
-char SourceNameN[50];
-char SourceNameZ[50];
+char source_name_ew[50];
+char Source_name_ns[50];
+char source_name_z[50];
 
 //
 int tag = 0;
@@ -159,15 +155,20 @@ int counter = 0;
 /* Main Program */
 int main()
 {
-
-/**
+    fp_log = fopen("digitizer.log", "w");
+    if (fp_log == NULL)
+    {
+        printf("Cannot create log file. Program exiting.\n");
+        return -1;
+    }
     // parse configuration file
-    if (ParseConfigFile() == -1)
+    if (parse_config_file(fp_log) == -1)
     {
         printf("Error parsing configuration file. Exiting\n");
         return -1;
     }
-*/
+
+
 /**
     // GPIO setup
     /////////////////
@@ -190,76 +191,83 @@ int main()
      * hostname = localhost, port = 16000
     */
 /**
-	if (connect2DLServer(&dlconn, fp_log) != 1)
+	if (connect_dl_server(&dlconn, fp_log) != 1)
 	{
-		fprintf(fp_log, "%s: Failed to connect to DL server. Please try again.\n", GetLogTime());
+		fprintf(fp_log, "%s: Failed to connect to DL server. Please try again.\n", get_log_time());
       //  fflush(fp_log);
 		fclose(fp_log);
 		return -1;
 	}
-
-    fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-
-    fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", GetLogTime());
+    fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", get_log_time());
 */
     /* Allocate memory for MSRecord Struct */
-/**
+
     if(!(msr_NS = msr_init(msr_NS)))
     {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", GetLogTime());
+        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", get_log_time());
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
+        if (dlconn->link != -1)
+            dl_disconnect(dlconn);
 
-        if ( dlconn )
-            dl_freedlcp (dlconn);
+        if (dlconn)
+            dl_freedlcp(dlconn);
 
-        fclose(fp_log);
+        if (fp_log != NULL)
+            fclose(fp_log);
+
         return -1;
     }
+/**
     if(!(msr_EW = msr_init(msr_EW)))
     {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", GetLogTime());
+        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", get_log_time());
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
+        if (dlconn->link != -1)
+            dl_disconnect(dlconn);
 
-        if ( dlconn )
-            dl_freedlcp (dlconn);
+        if (dlconn)
+            dl_freedlcp(dlconn);
 
-        fclose(fp_log);
+        if (fp_log != NULL)
+            fclose(fp_log);
+
         return -1;
     }
     if(!(msr_Z = msr_init(msr_Z)))
     {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", GetLogTime());
+        fprintf(fp_log, "%s: Error initializing memory for MSEED struct\n", get_log_time());
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
+        if (dlconn->link != -1)
+            dl_disconnect(dlconn);
 
-        if ( dlconn )
-            dl_freedlcp (dlconn);
+        if (dlconn)
+            dl_freedlcp(dlconn);
 
-        fclose(fp_log);
+        if (fp_log != NULL)
+            fclose(fp_log);
+
         return -1;
     }
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-
-    fprintf(fp_log, "%s: MSR struct allocated\n", GetLogTime());
+    fprintf(fp_log, "%s: MSR struct allocated.\n", get_log_time());
     fflush(fp_log);
 
     /* Intialize MSRecord struct */
-/**    // NS
-    initialize_MSRecord(&msr_NS, network, station,location, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
-    // EW
-    initialize_MSRecord(&msr_EW, network, station,location, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
+    // NS
+    initialize_msrecord(&msr_NS, network, station,location, channel_name_ns, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
+    char *temp = generate_stream_id(msr_NS);
+    printf("%s\n", temp);
+
+    fclose(fp_log);
+    msr_free(&msr_NS);
+    return 0;
+/**    // EW
+    initialize_msrecord(&msr_EW, network, station,location, channel_name_ew, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
     // Z
-    initialize_MSRecord(&msr_Z, network, station,location, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
+    initialize_msrecord(&msr_Z, network, station,location, channel_name_z, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
 
     fprintf(fp_log, "%s: MSR initalized\n", GetLogTime());
     //MaximumPackets(dlconn, fp_log);
-    Configure_Streams();
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+    configure_streams();
 
 */
 /**
@@ -529,7 +537,7 @@ int main()
     pthread_t read_serial_buffer_thread_ID;
     if (pthread_create(&read_serial_buffer_thread_ID, NULL, read_serial_buffer, NULL) != 0)
     {
-        fprintf(fp_log, "%s: Error in creating thread: HandleMSEEDRecord\n", GetLogTime());
+        fprintf(fp_log, "%s: Error in creating thread: HandleMSEEDRecord\n", get_log_time());
         // timestamp_queue_free();
         // de-allocate timestamp queue
         //queue_timestamp_free(&q_timestamp);
@@ -562,10 +570,28 @@ int main()
     }
     //fflush(fp_log);
 
+    write_serial();
 
+    char *sample;
+    int rv;
     while (1)
     {
-        sleep(1);
+        rv = get_data_buffer_sample(data_queue, &sample, fp_log);
+        if (rv == -1)
+        {
+            usleep(1000);
+            continue;
+        }
+        else if (rv == 0)
+        {
+            printf("error\n");
+            return -1;
+        }
+        else
+        {
+            //printf("%s\n", sample);
+            free(sample);
+        }
     }
     /* Initiate interrupt function that timestamps */
 
@@ -749,30 +775,31 @@ void *read_serial_buffer(void *arg)
                 // Arduino still initializing
                 continue;
             }
+
             if (strcmp(serial_data, "*") == 0)
             {
-                // time stored in global cariable hptime_start
+                // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records
                 ms_hptime2isotimestr(hptime_start, date_time, 1);
                 printf("%s\n", date_time);
             }
             //printf("%s\n", serial_data);
-            /**
-            if(InsertDataQueue(qDataSample, SerialData, fp_log) == -1)
+
+            if (insert_data_buffer(data_queue, serial_data, fp_log) == -1)
             {
-                fprintf(fp_log, "%s: Could no insert sample in data queue\n", GetLogTime());
-                fflush(fp_log);
-                continue;
+                //fprintf(fp_log, "%s: Failed to allocate memory to store sample in buffer. Potential memory issue. Fix and reboot program.\n", GetLogTime());
+                //fflush(fp_log);
+                printf("failed to insert into buffer\n");
+                exit(0); // hard kill program. Need something better.
             }
-            */
+
         }
     }
 }
 
-/**
-int ParseConfigFile(void)
-{
 
+int parse_config_file(FILE *fp)
+{
     config_t cfg, *cf;
     cf = &cfg;
     config_init(cf);
@@ -782,31 +809,13 @@ int ParseConfigFile(void)
         fprintf(stderr, "%s:%d - %s\n", config_error_file(cf),
                                         config_error_line(cf),
                                         config_error_text(cf));
+
+
+        fprintf(fp_log, "%s: %s:%d - %s\n", get_log_time(), config_error_file(cf),
+                                                          config_error_line(cf),
+                                                          config_error_text(cf));
+
         config_destroy(cf);
-        return -1;
-    }
-    // parse logfile first
-    int logfile_flag;
-    if (config_lookup_int(cf, "logfile", &logfile_flag))
-    {
-        if (logfile_flag == 1)
-        {
-            fp_log = fopen(LogFile, "w");
-            if (fp_log == NULL)
-            {
-                printf("Cannot create log file\n");
-                return -1;
-            }
-        }
-        else
-        {
-            printf("Please set logfile flag to 1 in configuration file\n");
-            return -1;
-        }
-    }
-    else
-    {
-        printf("logfile not defined\n");
         return -1;
     }
     // msr struct variables
@@ -815,7 +824,7 @@ int ParseConfigFile(void)
         strcpy(network, temp);
     else
     {
-        fprintf(fp_log, "network not defined\n");
+        fprintf(fp_log, "%s: network not defined.\n", get_log_time());
         return -1;
     }
 
@@ -823,7 +832,7 @@ int ParseConfigFile(void)
         strcpy(station, temp);
     else
     {
-        fprintf(fp_log, "station not defined\n");
+        fprintf(fp_log, "%s: station not defined.\n", get_log_time());
         return -1;
     }
 
@@ -831,7 +840,7 @@ int ParseConfigFile(void)
         strcpy(location,temp);
     else
     {
-        fprintf(fp_log, "location not defined\n");
+        fprintf(fp_log, "%s: location not defined.\n", get_log_time());
         return -1;
     }
 
@@ -839,7 +848,7 @@ int ParseConfigFile(void)
         dataquality = temp[0];//strcpy(dataquality, temp);
     else
     {
-        fprintf(fp_log, "dataquality not defined");
+        fprintf(fp_log, "%s: dataquality not defined.", get_log_time());
         return -1;
     }
 
@@ -848,7 +857,7 @@ int ParseConfigFile(void)
         encoding = (int8_t)temp_encoding;
     else
     {
-        fprintf(fp_log, "encoding not defined\n");
+        fprintf(fp_log, "%s: encoding not defined\n", get_log_time());
         return -1;
     }
 
@@ -856,7 +865,7 @@ int ParseConfigFile(void)
         sampletype = temp[0];
     else
     {
-        fprintf(fp_log, "sampletype not defined\n");
+        fprintf(fp_log, "%s: sampletype not defined\n", get_log_time());
         return -1;
     }
 
@@ -865,7 +874,7 @@ int ParseConfigFile(void)
         samprate = (double)temp_samprate;
     else
     {
-        fprintf(fp_log, "samprate not defined\n");
+        fprintf(fp_log, "%s: samprate not defined\n", get_log_time());
         return -1;
     }
 
@@ -874,7 +883,7 @@ int ParseConfigFile(void)
         byteorder = (int8_t)temp_byteorder;
     else
     {
-        fprintf(fp_log, "byteorder not defined\n");
+        fprintf(fp_log, "%s: byteorder not defined\n", get_log_time());
         return -1;
     }
 
@@ -882,22 +891,27 @@ int ParseConfigFile(void)
         ;
     else
     {
-        fprintf(fp_log, "reclen not defined\n");
+        fprintf(fp_log, "%s: reclen not defined\n", get_log_time());
         return -1;
     }
     // channel names
-    const config_setting_t *channelnames;
-    channelnames = config_lookup(cf, "channelname");
-    int count = config_setting_length(channelnames);
+    const config_setting_t *channel_names;
+    channel_names = config_lookup(cf, "channelname");
+    int count = config_setting_length(channel_names);
+    if (count < 3)
+    {
+        fprintf(fp_log, "%s: Less than three channel names specified in configuration file. For single channel operation, adjust code.\n", get_log_time());
+        return -1;
+    }
     for (int i = 0; i < count; i ++)
     {
-        const char *temp = config_setting_get_string_elem(channelnames, i);
+        const char *temp = config_setting_get_string_elem(channel_names, i);
         if (temp[2] == 'N')
-            strcpy(ChannelNameNS, temp);
+            strcpy(channel_name_ns, temp);
         else if(temp[2] == 'E')
-            strcpy(ChannelNameEW, temp);
+            strcpy(channel_name_ew, temp);
         else
-            strcpy(ChannelNameZ, temp);
+            strcpy(channel_name_z, temp);
         //strcpy(ChannelNameEW1, config_setting_get_string_elem(channelnames, i));
     }
 
@@ -905,52 +919,49 @@ int ParseConfigFile(void)
 
     // usb save location
     if (config_lookup_string(cf, "usblocation", &temp))
-        strcpy(MseedVolume, temp);
+        strcpy(mseed_volume, temp);
     else
     {
-        fprintf(fp_log, "usblocation not found\n");
+        fprintf(fp_log, "%s: usblocation not found\n", get_log_time());
         return -1;
     }
 
     // save2mseed file flag
-    if (config_lookup_int(cf, "save2mseedfile", &Save2MseedFile))
+    if (config_lookup_int(cf, "save2mseedfile", &save_mseed_file))
         ;
     else
     {
-        fprintf(fp_log, "save2mseedfile not found\n");
+        fprintf(fp_log, "%s: save2mseedfile not found\n", get_log_time());
         return -1;
     }
-    Save2MseedFile_temp = Save2MseedFile;
+    save_mseed_file_temp = save_mseed_file;
     config_destroy(cf);
     return 1;
 }
-*/
+
 /**
-void Configure_Streams()
+void configure_streams()
 {
-    strcpy(msr_NS->channel, ChannelNameNS);
-    strcpy(msr_EW->channel, ChannelNameEW);
-    strcpy(msr_Z->channel, ChannelNameZ);
+    msr_srcname(msr_NS, source_name_ns, 0);
+    msr_srcname(msr_EW, source_name_ew, 0);
+    msr_srcname(msr_Z, source_name_z, 0);
 
-    msr_srcname(msr_NS, SourceNameN, 0);
-    msr_srcname(msr_EW, SourceNameE, 0);
-    msr_srcname(msr_Z, SourceNameZ, 0);
+    strcpy(stream_id_ns, source_name_ns);
+    strcpy(stream_id_ew, source_name_ew);
+    strcpy(stream_id_z, source_name_z);
 
-    strcpy(StreamIDE, SourceNameE);
-    strcpy(StreamIDN, SourceNameN);
-    strcpy(StreamIDZ, SourceNameZ);
+    strcat(source_name_ns, "/");
+    strcat(source_name_ew, "/");
+    strcat(source_name_z, "/");
 
-    strcat(SourceNameE, "/");
-    strcat(SourceNameN, "/");
-    strcat(SourceNameZ, "/");
+    strcat(stream_id_ns, "/MSEED");
+    strcat(stream_id_ew, "/MSEED");
+    strcat(stream_id_z, "/MSEED");
 
-    strcat(StreamIDE, "/MSEED");
-    strcat(StreamIDN, "/MSEED");
-    strcat(StreamIDZ, "/MSEED");
-
-    SaveFolderE = SourceNameE;
-    SaveFolderN = SourceNameN;
-    SaveFolderZ = SourceNameZ;
+    /**
+    SaveFolderN = source_name_ns;
+    SaveFolderE = source_name_ew;
+    SaveFolderZ = source_name_z;
 
 
     // set up usb save location
@@ -967,8 +978,9 @@ void Configure_Streams()
     strcpy(SaveFolderUSBZ, MseedVolume);
     strcat(SaveFolderUSBZ, "/");
     strcat(SaveFolderUSBZ, SaveFolderZ);
-}
-*/
+    */
+//}
+//*/
 
 
 

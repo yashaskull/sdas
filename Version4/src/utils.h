@@ -20,7 +20,7 @@
 
 #define NANO 1000000000
 
-char *GetLogTime(void);
+char *get_log_time(void);
 // KeyBoard Interrupt
 int kbhit(void);
 
@@ -36,7 +36,7 @@ int TotalStreams(DLCP *dlconn, FILE *fp);
 int LatestPacketID(char *StreamName, DLCP *dlconn, FILE *fp);
 int MaximumPackets(DLCP *dlconn, FILE *fp);
 // Datalink Functions
-int connect2DLServer(DLCP **dlconn, FILE *fp);
+int connect_dl_server(DLCP **dlconn, FILE *fp);
 
 // GPIO functions
 int GPIO_setup();

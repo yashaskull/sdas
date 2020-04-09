@@ -17,6 +17,7 @@
 				<Linker>
 					<Add library="wiringPi" />
 					<Add library="pthread" />
+					<Add library="config" />
 				</Linker>
 			</Target>
 			<Target title="Release">

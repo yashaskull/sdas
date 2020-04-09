@@ -38,7 +38,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 		mseed = "z.mseed";
 	else
 	{
-		fprintf(fp, "%s: Incorrect channel identifier specified: %c. Expected either 'e', 'n', or 'z'. \n", GetLogTime(), ChannelIdentifier);// what to do in this case ?
+		fprintf(fp, "%s: Incorrect channel identifier specified: %c. Expected either 'e', 'n', or 'z'. \n", get_log_time(), ChannelIdentifier);// what to do in this case ?
 		fflush(fp);
 		return -1;
 	}
@@ -46,7 +46,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 	FileName = (char *)malloc(sizeof(mseed) + sizeof(DateTime)); // what to do if filename null ?
 	if (FileName == NULL)
 	{
-		fprintf(fp, "%s: Cannot allocate memory for filename.\n", GetLogTime());
+		fprintf(fp, "%s: Cannot allocate memory for filename.\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
@@ -59,7 +59,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 		if (BytesReturned <= 0)
 		{
 			// ignoring packet at LowerPktID + 1 and moving onto next.
-			fprintf(fp, "%s: %d bytes returned. Error retrieving packet (ID: %d) from DL server. \n", GetLogTime(), BytesReturned, LowerPktID + 1);
+			fprintf(fp, "%s: %d bytes returned. Error retrieving packet (ID: %d) from DL server. \n", get_log_time(), BytesReturned, LowerPktID + 1);
 			fflush(fp);
 			continue;
 		}
@@ -99,7 +99,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 
 	if (SaveLocation == NULL)
 	{
-		fprintf(fp, "%s: Cannot allocate memory for SaveLocation.\n", GetLogTime());
+		fprintf(fp, "%s: Cannot allocate memory for SaveLocation.\n", get_log_time());
 		fflush(fp);
 		free(FileName);
 		return -1;
@@ -161,7 +161,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 	else if ((ofp = fopen(SaveLocation, perms)) == NULL)
 	{
 		//ms_log(1, "Cannot open output file %s: %s\n", SaveLocation, strerror(errno));
-		fprintf(fp, "%s: Cannot open output file %s: %s\n", GetLogTime(), SaveLocation, strerror(errno));
+		fprintf(fp, "%s: Cannot open output file %s: %s\n", get_log_time(), SaveLocation, strerror(errno));
 		fflush(fp);
 		free(FileName);
 		free(SaveLocation);
@@ -173,7 +173,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 		int BytesReturned = dl_read(dlconn, i, &dlpacket, PacketData, PacketSize);
 		if (BytesReturned <= 0 )
 		{
-			fprintf(fp, "%s: %d bytes returned. This record will not be written to file. Moving onto other record\n", GetLogTime(), BytesReturned);
+			fprintf(fp, "%s: %d bytes returned. This record will not be written to file. Moving onto other record\n", get_log_time(), BytesReturned);
 			fflush(fp);
 			continue;
 		}
@@ -184,7 +184,7 @@ int CreateMseedFile(DLCP *dlconn, int LowerPktID, int UpperPktID, int PacketSize
 				if (fwrite(PacketData, PacketSize, 1, (FILE *)ofp)!=1)
 				{
 					//ms_log(2, "Error writing to output file \n");
-					fprintf(fp, "%s: Error writing to output file\n", GetLogTime());
+					fprintf(fp, "%s: Error writing to output file\n", get_log_time());
 					fflush(fp);
 					continue;
 				}
@@ -478,7 +478,7 @@ int CreateFile(char *CheckMount, char *FileNameE, char *FileNameN, char *FileNam
     int LatestID = LatestPacketID(NULL, dlconn, fp_log);
     if (LatestID == -1)
     {
-        fprintf(fp_log, "%s: Error. Cannot save\n", GetLogTime());
+        fprintf(fp_log, "%s: Error. Cannot save\n", get_log_time());
 		return -1;
 	}
     else
@@ -488,7 +488,7 @@ int CreateFile(char *CheckMount, char *FileNameE, char *FileNameN, char *FileNam
         LastIDSaved = CreateMseedFile(dlconn, *LatestPktIDSavedN, LatestID, reclen, StreamIDN, SaveLocationNS, 'n', fp_log);
         if (LastIDSaved == -1)
         {
-            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", GetLogTime(), StreamIDN);
+            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", get_log_time(), StreamIDN);
             fflush(fp_log);
         }
         else
@@ -499,7 +499,7 @@ int CreateFile(char *CheckMount, char *FileNameE, char *FileNameN, char *FileNam
         LastIDSaved = CreateMseedFile(dlconn, *LatestPktIDSavedE, LatestID, reclen, StreamIDE, SaveLocationEW, 'e', fp_log);
         if (LastIDSaved == -1)
         {
-            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", GetLogTime(), StreamIDE);
+            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", get_log_time(), StreamIDE);
             fflush(fp_log);
         }
         else
@@ -511,7 +511,7 @@ int CreateFile(char *CheckMount, char *FileNameE, char *FileNameN, char *FileNam
         LastIDSaved = CreateMseedFile(dlconn, *LatestPktIDSavedZ, LatestID, reclen, StreamIDZ, SaveLocationZ, 'z', fp_log);
         if (LastIDSaved == -1)
         {
-            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", GetLogTime(), StreamIDZ);
+            fprintf(fp_log, "%s: Error in saving mseed file for %s\n", get_log_time(), StreamIDZ);
             fflush(fp_log);
         }
         else
@@ -551,7 +551,7 @@ int SaveFolderConfig(char *CheckMount, char *MountCommand, char *MseedVolume, ch
     strcat(CheckMount, MseedVolume);
     if (system(CheckMount) == 0) // mounted
     {
-        fprintf(fp_log, "%s: USB drive at %s mounted!\n",GetLogTime(), MseedVolume);
+        fprintf(fp_log, "%s: USB drive at %s mounted!\n",get_log_time(), MseedVolume);
         char mkdir[] = "mkdir ";
 
         char mkdir_command[strlen(mkdir) + strlen(SaveFolderUSBE)];
@@ -561,17 +561,17 @@ int SaveFolderConfig(char *CheckMount, char *MountCommand, char *MseedVolume, ch
         dir = opendir(SaveFolderUSBE);
         if (dir)
         {
-            fprintf(fp_log, "%s: %s directory already exists\n", GetLogTime(), SaveFolderUSBE);
+            fprintf(fp_log, "%s: %s directory already exists\n", get_log_time(), SaveFolderUSBE);
             closedir(dir);
         }
         else if(ENOENT == errno)
         {
             if (system(mkdir_command) == 0)
-                fprintf(fp_log, "%s: Directory created %s\n",GetLogTime(), SaveFolderUSBE);
+                fprintf(fp_log, "%s: Directory created %s\n",get_log_time(), SaveFolderUSBE);
 
             else
             {
-                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",GetLogTime(), SaveFolderUSBE);// successfully created directory
+                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",get_log_time(), SaveFolderUSBE);// successfully created directory
                 return -1;
             }
         }
@@ -584,16 +584,16 @@ int SaveFolderConfig(char *CheckMount, char *MountCommand, char *MseedVolume, ch
         dir = opendir(SaveFolderUSBN);
         if (dir)
         {
-            fprintf(fp_log, "%s: %s directory already exists\n", GetLogTime(), SaveFolderUSBN);
+            fprintf(fp_log, "%s: %s directory already exists\n", get_log_time(), SaveFolderUSBN);
             closedir(dir);
         }
         else if(ENOENT == errno)
         {
             if (system(mkdir_command) == 0)
-                fprintf(fp_log, "%s: Directory created %s\n",GetLogTime(), SaveFolderUSBN);
+                fprintf(fp_log, "%s: Directory created %s\n",get_log_time(), SaveFolderUSBN);
             else
             {
-                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",GetLogTime(), SaveFolderUSBN);// successfully created directory
+                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",get_log_time(), SaveFolderUSBN);// successfully created directory
                 return -1;
             }
         }
@@ -605,16 +605,16 @@ int SaveFolderConfig(char *CheckMount, char *MountCommand, char *MseedVolume, ch
         dir = opendir(SaveFolderUSBZ);
         if (dir)
         {
-            fprintf(fp_log, "%s: %s directory already exists\n", GetLogTime(), SaveFolderUSBZ);
+            fprintf(fp_log, "%s: %s directory already exists\n", get_log_time(), SaveFolderUSBZ);
             closedir(dir);
         }
         else if(ENOENT == errno)
         {
             if (system(mkdir_command) == 0)
-                fprintf(fp_log, "%s: Directory created %s\n",GetLogTime(), SaveFolderUSBZ);
+                fprintf(fp_log, "%s: Directory created %s\n",get_log_time(), SaveFolderUSBZ);
             else
             {
-                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",GetLogTime(), SaveFolderUSBZ);// successfully created directory
+                fprintf(fp_log, "%s: Cannot create directory %s. Restart program.\n",get_log_time(), SaveFolderUSBZ);// successfully created directory
                 return -1;
             }
         }

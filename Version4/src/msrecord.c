@@ -13,11 +13,12 @@ int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, 
     // printf("Record sent!\n");
 }
 */
-void initialize_MSRecord(MSRecord **msr_temp, char network[11], char station[11], char location[11], char dataquality, double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen)
+void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11], char location[11], char channelname[3], char dataquality, double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen)
 {
-    strcpy ((*msr_temp)->network, network);
-	strcpy ((*msr_temp)->station, station);
+    strcpy((*msr_temp)->network, network);
+	strcpy((*msr_temp)->station, station);
 	strcpy((*msr_temp)->location, location);
+	strcpy((*msr_temp)->channel, channelname);
 	(*msr_temp)->reclen = reclen;
 	(*msr_temp)->dataquality = dataquality;
 	(*msr_temp)->samprate = samprate;
@@ -482,4 +483,18 @@ void *blink_LED(void *arg)
 
     pthread_detach(pthread_self());
     return NULL;
+}
+
+char *generate_stream_id(MSRecord *msr);
+{
+    static char stream_id[50];
+    // generate source name
+    msr_srcname(msr, stream_id, 0);
+    // generate stream id
+    //strcpy(stream_id, source_name);
+    //strcat(stream_id, "/");
+    strcat(stream_id, "/MSEED");
+    //return stream_id;
+    return stream_id;
+
 }
