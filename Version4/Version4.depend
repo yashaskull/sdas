@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1586468841 source:/home/arvid/projects/sdas/Version4/main.c
+1586565214 source:/home/arvid/projects/sdas/Version4/main.c
 	<stdio.h>
 	<fcntl.h>
 	<termios.h>
@@ -162,7 +162,7 @@
 	"utils.h"
 	<dirent.h>
 
-1586468852 /home/arvid/projects/sdas/Version4/src/msrecord.h
+1586554922 /home/arvid/projects/sdas/Version4/src/msrecord.h
 	<stdio.h>
 	<fcntl.h>
 	<termios.h>
@@ -187,10 +187,10 @@
 1586454578 source:/home/arvid/projects/sdas/Version4/src/mseedfilesetup.c
 	"mseedfilesetup.h"
 
-1586473247 source:/home/arvid/projects/sdas/Version4/src/msrecord.c
+1586565227 source:/home/arvid/projects/sdas/Version4/src/msrecord.c
 	"msrecord.h"
 
-1586454607 source:/home/arvid/projects/sdas/Version4/src/queue.c
+1586550984 source:/home/arvid/projects/sdas/Version4/src/queue.c
 	<stdio.h>
 	<fcntl.h>
 	<termios.h>

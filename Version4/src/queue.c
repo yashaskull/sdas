@@ -68,10 +68,10 @@ int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp)
         return 1;
     }
 
-  buffer->rear_p->next_p = data_buffer_node_temp;
-  buffer->rear_p = data_buffer_node_temp;
-  pthread_mutex_unlock(&buffer->rear_lock);
-  return 1;
+    buffer->rear_p->next_p = data_buffer_node_temp;
+    buffer->rear_p = data_buffer_node_temp;
+    pthread_mutex_unlock(&buffer->rear_lock);
+    return 1;
 }
 
 int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp)

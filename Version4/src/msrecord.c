@@ -30,6 +30,39 @@ void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11]
 }
 
 
+void process_data(int num_samples, hptime_t *hptime_starttime, pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp)
+{
+    char date_time [27];
+    write_serial();
+    printf("Waiting on condition variable cond1\n");
+    pthread_cond_wait(cond1, lock_timestamp);
+
+    ms_hptime2isotimestr(*hptime_starttime, date_time, 1);
+    printf("%s\n", date_time);
+
+    sleep(5);
+    /**
+    char date_time [27];
+
+    //int32_t *sample_block_ns = malloc(sizeof(int32_t) * num_samples);
+    //int32_t *sample_block_ew = malloc(sizeof(int32_t) * num_samples);
+    //int32_t *sample_block_z = malloc(sizeof(int32_t) * num_samples);
+
+    write_serial();
+    printf("sent start signal to arduino\n");
+    while(!kbhit())
+    {
+        if (*hptime_starttime == 0)
+        {
+            usleep(1000);
+            continue;
+        }
+        ms_hptime2isotimestr(*hptime_starttime, date_time, 1);
+        printf("%s\n", date_time);
+        break;
+    }*/
+}
+
 /**
 
 void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
@@ -485,7 +518,7 @@ void *blink_LED(void *arg)
     return NULL;
 }
 
-char *generate_stream_id(MSRecord *msr);
+char *generate_stream_id(MSRecord *msr)
 {
     static char stream_id[50];
     // generate source name

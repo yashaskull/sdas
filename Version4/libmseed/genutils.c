@@ -690,7 +690,6 @@ ms_hptime2isotimestr (hptime_t hptime, char *isotimestr, flag subseconds)
 
   if (isotimestr == NULL)
     return NULL;
-
   /* Reduce to Unix/POSIX epoch time and fractional seconds */
   isec   = MS_HPTIME2EPOCH (hptime);
   ifract = (int)(hptime - (isec * HPTMODULUS));
@@ -867,7 +866,7 @@ ms_time2hptime_int (int year, int day, int hour, int min, int sec, int usec)
 
   /* Add the microseconds */
   hptime += (hptime_t)usec * (1000000 / HPTMODULUS);
-	
+
   return hptime;
 } /* End of ms_time2hptime_int() */
 
@@ -891,7 +890,7 @@ ms_time2hptime_int (int year, int day, int hour, int min, int sec, int usec)
 hptime_t
 ms_time2hptime (int year, int day, int hour, int min, int sec, int usec)
 {
-	
+
   if (year < 1800 || year > 5000)
   {
     ms_log (2, "ms_time2hptime(): Error with year value: %d\n", year);
@@ -927,7 +926,7 @@ ms_time2hptime (int year, int day, int hour, int min, int sec, int usec)
     ms_log (2, "ms_time2hptime(): Error with microsecond value: %d\n", usec);
     return HPTERROR;
   }
-	
+
   return ms_time2hptime_int (year, day, hour, min, sec, usec);
 } /* End of ms_time2hptime() */
 

@@ -104,7 +104,7 @@ void setup() {
   {
     Serial.read();
   }
-  delay(500);
+  delay(1000);
 
   
   pinMode(ADS1220_CS_PIN_1, OUTPUT);
