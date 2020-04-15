@@ -35,7 +35,8 @@
 //#define BLOCK_LENGTH_335 335
 // #define BLOCK_LENGTH_92 92
 #define BLOCK_LENGTH_100 100
-#define BLOCK_LENGTH_102 102
+#define BLOCK_LENGTH_102 200
+
 #define TIMEOUT 1000000
 #define PGA 1
 #define MAX_SAVE_NUM 1200
@@ -93,7 +94,7 @@ char dataquality;
 int samprate;
 int8_t encoding; // INT32 encoding //FLOAT32 4
 int8_t byteorder; // MSB first
-int64_t numsamples = BLOCK_LENGTH_100;
+int64_t numsamples = 200;
 char sampletype; // 32-bit integer, f - float
 int reclen;
 
@@ -586,7 +587,7 @@ int main()
     //write_serial();
     //pthread_cond_wait(&cond1, &lock_timestamp);
 
-    process_data(5, &hptime_start, &cond1, &lock_timestamp);
+    process_data(msr_NS, msr_EW, msr_Z, numsamples, &hptime_start, &cond1, &lock_timestamp, data_queue, fp_log);
 
     /* Initiate interrupt function that timestamps */
 
@@ -678,7 +679,7 @@ int main()
 */
     stop_read_serial_buffer_thread = 0;
     sleep(1);
-        pthread_mutex_destroy(&lock_timestamp);
+    pthread_mutex_destroy(&lock_timestamp);
 
     pthread_detach(read_serial_buffer_thread_ID);
 
@@ -775,10 +776,13 @@ void timestamp_queue_free(void)
 
 void free_data_buffer_samples(void)
 {
+    printf("here\n");
     while(data_queue->front_p != NULL)
     {
         struct data_buffer_node *data_buffer_node_temp = data_queue->front_p;
         data_queue->front_p = data_queue->front_p->next_p;
+        if (data_buffer_node_temp->sample != NULL)
+            printf("%s\n", data_buffer_node_temp->sample);
         free(data_buffer_node_temp->sample);
         free(data_buffer_node_temp);
         if(data_queue->front_p == NULL)
@@ -812,8 +816,6 @@ void *read_serial_buffer(void *arg)
                 pthread_mutex_unlock(&lock_timestamp);
             }
             //printf("%s\n", serial_data);
-
-
             else
             {
                 if (insert_data_buffer(data_queue, serial_data, fp_log) == -1)
@@ -827,6 +829,7 @@ void *read_serial_buffer(void *arg)
 
         //}
     }
+    return NULL;
 }
 
 

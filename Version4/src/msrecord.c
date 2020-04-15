@@ -13,7 +13,10 @@ int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, 
     // printf("Record sent!\n");
 }
 */
-void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11], char location[11], char channelname[3], char dataquality, double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen)
+void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11],
+                         char location[11], char channelname[3], char dataquality,
+                         double samprate, int8_t encoding, int8_t byteorder,
+                         int64_t numsamples, char sampletype, int reclen)
 {
     strcpy((*msr_temp)->network, network);
 	strcpy((*msr_temp)->station, station);
@@ -30,37 +33,115 @@ void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11]
 }
 
 
-void process_data(int num_samples, hptime_t *hptime_starttime, pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp)
+int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,
+                 pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, FILE *fp_log)
 {
+    int32_t *sample_block_ns = malloc(sizeof(int32_t) * num_samples);
+    int32_t *sample_block_ew = malloc(sizeof(int32_t) * num_samples);
+    int32_t *sample_block_z = malloc(sizeof(int32_t) * num_samples);
+
+    if (sample_block_ns == NULL || sample_block_ew == NULL || sample_block_z == NULL)
+    {
+        printf("Failed to allocate memory for one or more sample blocks. Fix and restart program.\n");
+        return -1;
+    }
+
+    char *data_sample;
+    int get_data_buffer_sample_rv;
+    int data_sample_counter = 0;
+    char data_sample_token[NUM_CHANNELS][MAX_CHANNEL_LENGTH];
+    char *sample_ptr;
+    int sample_ptr_counter;
+
     char date_time [27];
+
+    ///////////////////////
+    int packed_samples;
+    int packed_records;
+    ///////////////////////
     write_serial();
+
     printf("Waiting on condition variable cond1\n");
     pthread_cond_wait(cond1, lock_timestamp);
 
-    ms_hptime2isotimestr(*hptime_starttime, date_time, 1);
-    printf("%s\n", date_time);
-
-    sleep(5);
-    /**
-    char date_time [27];
-
-    //int32_t *sample_block_ns = malloc(sizeof(int32_t) * num_samples);
-    //int32_t *sample_block_ew = malloc(sizeof(int32_t) * num_samples);
-    //int32_t *sample_block_z = malloc(sizeof(int32_t) * num_samples);
-
-    write_serial();
-    printf("sent start signal to arduino\n");
+    //ms_hptime2isotimestr(*hptime_starttime, date_time, 1);
+    //printf("%s\n", date_time);
+    msr_NS->starttime = *hptime_starttime;
+    msr_EW->starttime = *hptime_starttime;
+    msr_Z->starttime = *hptime_starttime;
     while(!kbhit())
     {
-        if (*hptime_starttime == 0)
+        get_data_buffer_sample_rv = get_data_buffer_sample(d_queue, &data_sample, fp_log);
+        if (get_data_buffer_sample_rv == -1)
         {
+            //fprintf(fp_log, "%s: No data.\n", GetLogTime());
+            //fflush(fp_log);
             usleep(1000);
             continue;
         }
-        ms_hptime2isotimestr(*hptime_starttime, date_time, 1);
-        printf("%s\n", date_time);
-        break;
-    }*/
+        else if(get_data_buffer_sample_rv == 0)
+        {
+            fprintf(fp_log, "%s: Cannot get sample\n", get_log_time());
+            fflush(fp_log);
+            usleep(1000);
+            continue;
+            // whatelse to do here ?? will need to come back
+        }
+        else
+        {
+            sample_ptr_counter = 0;
+            sample_ptr = strtok(data_sample, "*");
+            while (sample_ptr != NULL)
+            {
+                strcpy(data_sample_token[sample_ptr_counter], sample_ptr);
+                sample_ptr_counter ++;
+                sample_ptr = strtok(NULL, "*");
+            }
+            //printf("%s %s %s\n", data_sample_token[0], data_sample_token[1], data_sample_token[2]);
+            //data_sample_counter ++;
+            //printf("1\n");
+            sample_block_ns[data_sample_counter] = atoi(data_sample_token[0]);
+            sample_block_ew[data_sample_counter] = atoi(data_sample_token[1]);
+            sample_block_z[data_sample_counter] = atoi(data_sample_token[2]);
+            data_sample_counter ++;
+
+            free (data_sample);
+            //printf("1\n");*/
+        }
+
+        // block length = 200 samples
+        if (data_sample_counter == num_samples)
+        {
+
+            ms_hptime2isotimestr(msr_NS->starttime, date_time, 1);
+            printf("%s\n", date_time);
+            // create ms records for each channel
+
+            msr_NS->datasamples = sample_block_ns;
+            msr_EW->datasamples = sample_block_ew;
+            msr_Z->datasamples = sample_block_z;
+
+            packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
+            //printf("%d %d\n", packed_records, packed_samples);
+
+            packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
+            //printf("%d %d\n", packed_records, packed_samples);
+
+            packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
+            //printf("%d %d\n", packed_records, packed_samples);
+
+            data_sample_counter = 0;
+        }
+    }
+
+    if (sample_block_ns != NULL)
+        free (sample_block_ns);
+    if (sample_block_ew != NULL)
+        free (sample_block_ew);
+    if (sample_block_z != NULL)
+        free (sample_block_z);
+
+    return 1;
 }
 
 /**

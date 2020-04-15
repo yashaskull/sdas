@@ -539,9 +539,9 @@ extern int           msr_unpack (char *record, int reclen, MSRecord **ppmsr,
 
 //extern int           msr_pack (MSRecord *msr, void (*record_handler) (char *, int, void *),
 		 	       //void *handlerdata, int64_t *packedsamples, flag flush, flag verbose);
-		 	      
+
 extern int           msr_pack (MSRecord *msr,
-		 	        int *packedsamples, flag flush, flag verbse, DLCP *dlconn, char streamID[50], int SaveFlag, FILE *fp_save, FILE *fp_log, int **tag);
+		 	        int *packedsamples, flag flush, flag verbse, FILE *fp_log);
 
 extern int           msr_pack_header (MSRecord *msr, flag normalize, flag verbose);
 
@@ -598,13 +598,13 @@ extern int           mst_pack (MSTrace *mst,
 			      	int reclen, flag encoding, flag byteorder,
 			       int64_t *packedsamples, flag flush, flag verbose,
 			       MSRecord *mstemplate, char **record);
-			       
+
 //extern int           mst_pack (MSTrace *mst, void (*record_handler) (char *, int, void *),
 //			       void *handlerdata, int reclen, flag encoding, flag byteorder,
 	//		       int64_t *packedsamples, flag flush, flag verbose,
 		//	       MSRecord *mstemplate);
-			       
-			       
+
+
 extern int           mst_packgroup (MSTraceGroup *mstg, void (*record_handler) (char *, int, void *),
 				    void *handlerdata, int reclen, flag encoding, flag byteorder,
 				    int64_t *packedsamples, flag flush, flag verbose,

@@ -112,10 +112,8 @@ void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
   }
 }
 
-int
-msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlconn, char streamID[50], int SaveFlag, FILE *fp_save, FILE *fp_log, int **tag)
+int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE *fp_log)
 {
-
 
 	//printf("Inside msr pack\n");
   uint16_t *HPnumsamples;
@@ -388,13 +386,10 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
 
   if (msr->encoding == DE_STEIM1)
   {
-    printf("STEIMMMM1\n");
     maxsamples = (int)(maxdatabytes / 64) * STEIM1_FRAME_MAX_SAMPLES;
   }
   else if (msr->encoding == DE_STEIM2)
   {
-      printf("STEIMMMM2\n");
-
     maxsamples = (int)(maxdatabytes / 64) * STEIM2_FRAME_MAX_SAMPLES;
   }
   else
@@ -409,10 +404,6 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
   if (packedsamples)
     *packedsamples = 0;
 
-
-    printf("MAX SAMPLES: %d", maxsamples);
-
-    return -1;
   while ((msr->numsamples - totalpackedsamples) > maxsamples || flush)
   {
 
@@ -444,20 +435,15 @@ msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, DLCP *dlc
 
 		// CALL MSRecord2DLServer
 
-		char date_time[27];
-    ms_hptime2isotimestr(msr->starttime, date_time, 1);
+    //char date_time[27];
+    //ms_hptime2isotimestr(msr->starttime, date_time, 1);
     //printf("Record%d starttime: %s\n", recordcnt, date_time);
-		hptime_t record_endtime = msr_endtime(msr);
-   	int rv = MSRecord2DLServer(rawrec, streamID, record_endtime, msr->starttime, dlconn, msr->reclen, fp_log);
-		//if (rv == -1)
-	//	{
-	//		**tag = 0;
-	//	}
-	//	else
-	//		**tag = 1;
-		//Save packet to file
-		if (SaveFlag == 1)
-			record_handler(rawrec, msr->reclen, fp_save, fp_log);
+    //hptime_t record_endtime = msr_endtime(msr);
+   	//int rv = MSRecord2DLServer(rawrec, streamID, record_endtime, msr->starttime, dlconn, msr->reclen, fp_log);
+
+
+    //if (SaveFlag == 1)
+        //record_handler(rawrec, msr->reclen, fp_save, fp_log);
 
     totalpackedsamples += packsamples;
     if (packedsamples)
