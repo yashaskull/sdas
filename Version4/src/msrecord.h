@@ -33,11 +33,14 @@ void initialize_msrecord( MSRecord **msr_temp, char network[11], char station[11
                           double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen);
 
 int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,pthread_cond_t *cond1,
-                 pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, FILE *fp_log);
+                 pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, struct timestamp_buffer *ts_queue, FILE *fp_log);
 
 //void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
   //             int BlockLength, int Save2MseedFile, int Save2MseedFile_temp, char *SaveFolderUSBE, char *SaveFolderUSBN, char *SaveFolderUSBZ,
     //           char StreamIDE[50], char StreamIDN[50], char StreamIDZ[50], int reclen, DLCP *dlconn, int *tag);
+
+int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample_period,
+                    MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z);
 
 void *blink_LED(void *arg);
 

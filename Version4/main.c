@@ -55,18 +55,16 @@ int data_counter = 0;
 int data_block_counter = 0;
 
 void TimeStamp(void);
-void timestamp_queue_free(void);
 void *read_serial_buffer(void *arg);
+void free_timestamp_buffer_samples(void);
 void free_data_buffer_samples(void);
 int parse_config_file(FILE *fp);
-void Configure_Streams();
-void *StatusLED_blink(void *arg);
 
 /******* Global Variables **************/
 
 
 // Data and TimeStamp structs
-struct  Q_timestamp *q_timestamp;
+struct  timestamp_buffer *timestamp_queue;
 
 // data buffer is a queue type implementation
 struct data_buffer *data_queue;
@@ -161,6 +159,7 @@ int counter = 0;
 /* Main Program */
 int main()
 {
+
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {
@@ -267,7 +266,6 @@ int main()
     fprintf(fp_log, "%s: MSR initalized\n", get_log_time());
     //MaximumPackets(dlconn, fp_log);
 
-    //configure_streams();
     char *temp = generate_stream_id(msr_NS);
     strcpy(stream_id_ns, temp);
 
@@ -366,9 +364,13 @@ int main()
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /* Create queue that contains timestamps */
 
- /**   if (!(q_timestamp = create_queue_timestamp(q_timestamp, fp_log)))
+    if (!(timestamp_queue = create_timestamp_buffer(timestamp_queue, fp_log)))
     {
-        fprintf(fp_log, "%s: Could not allocate q, out of memory?\n", GetLogTime());
+        fprintf(fp_log, "%s: Could not allocate timestamp queue, out of memory?\n", get_log_time());
+
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
+
         // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -378,8 +380,6 @@ int main()
 
         msr_Z->datasamples = NULL;
         msr_free(&msr_Z);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
 
         // Free DL descriptor and disconnect
         if ( dlconn->link != -1 )
@@ -388,21 +388,22 @@ int main()
         if ( dlconn )
             dl_freedlcp (dlconn);
 
-		fclose(fp_log);
+        if (fp_log != NULL)
+            fclose(fp_log);
+
 		return -1;
     }
-    fprintf(fp_log, "%s: Timestamp queue created\n", GetLogTime());
-
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+    fprintf(fp_log, "%s: Timestamp queue created\n", get_log_time());
 
     /* Initialize timestamp queue */
- /**   if(initialize_Queue_timestamp(q_timestamp, fp_log) == -1)
+    if(initialize_timestamp_buffer(timestamp_queue, fp_log) == -1)
     {
-        fprintf(fp_log, "%s: Error in initializing queue. Try again\n", GetLogTime());
-        // de-allocate timestamp queue
-        queue_timestamp_free(&q_timestamp);
-        FreeDataQueueSamples();
-        DataQueueFree(&qDataSample);
+
+        fprintf(fp_log, "%s: Error in initializing queue. Try again\n", get_log_time());
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
+
+        free_timestamp_buffer(&timestamp_queue);
 
         // Free msr struct
         msr_NS->datasamples = NULL;
@@ -420,11 +421,13 @@ int main()
         if ( dlconn )
             dl_freedlcp (dlconn);
 
-		fclose(fp_log);
+        if (fp_log != NULL)
+            fclose(fp_log);
+
 		return -1;
     }
-    fprintf(fp_log, "%s: Timestamp queue initialized!\n", GetLogTime());
-        fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
+    fprintf(fp_log, "%s: Timestamp queue initialized!\n", get_log_time());
+    fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
 
     /* Open serial port */
     if (open_serial_port() == -1)
@@ -587,8 +590,12 @@ int main()
     //write_serial();
     //pthread_cond_wait(&cond1, &lock_timestamp);
 
-    process_data(msr_NS, msr_EW, msr_Z, numsamples, &hptime_start, &cond1, &lock_timestamp, data_queue, fp_log);
+    process_data(msr_NS, msr_EW, msr_Z, numsamples, &hptime_start, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log);
+   // write_serial();
+   // while(!kbhit())
+   // {
 
+    //}
     /* Initiate interrupt function that timestamps */
 
 /**
@@ -686,6 +693,9 @@ int main()
     free_data_buffer_samples();
     free_data_buffer(&data_queue);
 
+    free_timestamp_buffer_samples();
+    free_timestamp_buffer(&timestamp_queue);
+
 // Free msr struct
         msr_NS->datasamples = NULL;
         msr_free(&msr_NS);
@@ -760,23 +770,24 @@ void TimeStamp(void)
 
 }
 */
-/**
-void timestamp_queue_free(void)
+
+void free_timestamp_buffer_samples(void)
 {
-    while(q_timestamp->front != NULL)
+    while(timestamp_queue->front_p != NULL)
     {
-    	struct Q_timestamp_node *temp = q_timestamp->front;
-        q_timestamp->front = q_timestamp->front->next;
-        free(temp);
-        if(q_timestamp->front == NULL)
-            q_timestamp->rear = NULL;
+    	struct timestamp_buffer_node *timestamp_buffer_node_temp = timestamp_queue->front_p;
+        timestamp_queue->front_p = timestamp_queue->front_p->next_p;
+        //printf("%d\n", timestamp_buffer_node_temp->ms_record_starttime);
+        free(timestamp_buffer_node_temp);
+        if(timestamp_queue->front_p == NULL)
+            timestamp_queue->rear_p = NULL;
     }
 }
-*/
+
 
 void free_data_buffer_samples(void)
 {
-    printf("here\n");
+    //printf("here\n");
     while(data_queue->front_p != NULL)
     {
         struct data_buffer_node *data_buffer_node_temp = data_queue->front_p;
@@ -803,17 +814,26 @@ void *read_serial_buffer(void *arg)
                 // Arduino still initializing
                 continue;
             }
-
+            //printf("%s\n", serial_data);
             //printf("%s\n", serial_data);
             if (strcmp(serial_data, "*") == 0)
             {
-                pthread_mutex_lock(&lock_timestamp);
+                //pthread_mutex_lock(&lock_timestamp);
                 // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records
-                //ms_hptime2isotimestr(hptime_start, date_time, 1);
+                //ms_hptime2isotimestr(hptime_start - hptime_temp, date_time, 1);
+                //hptime_temp = hptime_start;
                 //printf("%s\n", date_time);
+                int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
+                if(insert_timestamp_queue_rv == -1)
+                {
+                    // What to do if fail to be placed inside of queue ?
+                    fprintf(fp_log, "%s: Error inserting timestamp into queue\n", get_log_time());
+                    fflush(fp_log);
+                    exit(0);
+                }
                 pthread_cond_signal(&cond1);
-                pthread_mutex_unlock(&lock_timestamp);
+                //pthread_mutex_unlock(&lock_timestamp);
             }
             //printf("%s\n", serial_data);
             else
@@ -973,49 +993,4 @@ int parse_config_file(FILE *fp)
     config_destroy(cf);
     return 1;
 }
-
-/**
-void configure_streams()
-{
-    msr_srcname(msr_NS, source_name_ns, 0);
-    msr_srcname(msr_EW, source_name_ew, 0);
-    msr_srcname(msr_Z, source_name_z, 0);
-
-    strcpy(stream_id_ns, source_name_ns);
-    strcpy(stream_id_ew, source_name_ew);
-    strcpy(stream_id_z, source_name_z);
-
-    strcat(source_name_ns, "/");
-    strcat(source_name_ew, "/");
-    strcat(source_name_z, "/");
-
-    strcat(stream_id_ns, "/MSEED");
-    strcat(stream_id_ew, "/MSEED");
-    strcat(stream_id_z, "/MSEED");
-
-    /**
-    SaveFolderN = source_name_ns;
-    SaveFolderE = source_name_ew;
-    SaveFolderZ = source_name_z;
-
-
-    // set up usb save location
-
-    //SaveFolderUSBE = malloc(sizeof(char) * (strlen(MseedVolume) + strlen(SaveFolderE) + 1));
-    strcpy(SaveFolderUSBE, MseedVolume);
-    strcat(SaveFolderUSBE, "/");
-    strcat(SaveFolderUSBE, SaveFolderE);
-
-    strcpy(SaveFolderUSBN, MseedVolume);
-    strcat(SaveFolderUSBN, "/");
-    strcat(SaveFolderUSBN, SaveFolderN);
-
-    strcpy(SaveFolderUSBZ, MseedVolume);
-    strcat(SaveFolderUSBZ, "/");
-    strcat(SaveFolderUSBZ, SaveFolderZ);
-    */
-//}
-//*/
-
-
 

@@ -27,18 +27,16 @@ struct data_buffer
 	pthread_mutex_t rear_lock;
 };
 
-
-
-/* Queue definition for storing timestamps */
-struct Q_timestamp_node
+/* Queue type implementation for timestamps */
+struct timestamp_buffer_node
 {
-    hptime_t ms_record_timestamp;
-    struct Q_timestamp_node *next;
+    hptime_t ms_record_starttime;
+    struct timestamp_buffer_node *next_p;
 };
 
-struct Q_timestamp
+struct timestamp_buffer
 {
-    struct Q_timestamp_node *front, *rear;
+    struct timestamp_buffer_node *front_p, *rear_p;
     pthread_mutex_t front_lock;
     pthread_mutex_t rear_lock;
 };
@@ -50,10 +48,10 @@ int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp);
 int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp);
 void free_data_buffer (struct data_buffer **buffer);
 
-int insert_timestamp_queue(struct Q_timestamp *q, hptime_t timestamp, FILE *fp);
-void queue_timestamp_free(struct Q_timestamp **queue);
-struct Q_timestamp *create_queue_timestamp(struct Q_timestamp *queue, FILE *fp);
-int initialize_Queue_timestamp(struct Q_timestamp *queue, FILE *fp);
-hptime_t getStartTime(struct  Q_timestamp *q_timestamp);
+int insert_timestamp_queue(struct timestamp_buffer *buffer, hptime_t timestamp, FILE *fp);
+void free_timestamp_buffer(struct timestamp_buffer **buffer);
+struct timestamp_buffer *create_timestamp_buffer(struct timestamp_buffer *buffer, FILE *fp);
+int initialize_timestamp_buffer(struct timestamp_buffer *buffer, FILE *fp);
+hptime_t get_starttime(struct timestamp_buffer *buffer);
 
 #endif // QUEUE_H_INCLUDED

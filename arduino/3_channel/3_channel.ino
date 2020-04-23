@@ -64,6 +64,7 @@ int logicPin = 0;
 int leave = 0;
 int ignoreFirst100Samp = 0;
 unsigned long starttime = 0;
+unsigned long starttime_temp = 0;
 unsigned long endtime = 0;
 volatile int startCommand;
 int blockLength_req = 0;
@@ -125,6 +126,8 @@ void setup() {
   ADS1220.begin();
   //pinsInput();
   Serial.println("*");
+  //setupTimer();
+  //starttime = micros();
 }
 void loop()
 {
@@ -133,12 +136,16 @@ void loop()
     readData(true);
   }
 
-  /**
+  
   if (counter == 200)
   {
+    //starttime_temp = micros();
+    //Serial.println(starttime_temp - starttime);
+    //starttime = starttime_temp;
+    
     Serial.println("*");
     counter = 0;
-  }*/
+  }
   
 }// end loop
 
@@ -214,7 +221,8 @@ void setupTimer()
 // ISR for counter down timer
 ISR(TIMER1_COMPA_vect)
 {
-  Serial.println(counter);
+  //Serial.println(counter);
+  //Serial.println("*");
   counter = 0;
 }
 

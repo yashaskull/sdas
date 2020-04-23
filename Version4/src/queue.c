@@ -122,94 +122,96 @@ void free_data_buffer (struct data_buffer **buffer)
 	}
 }
 
-int initialize_Queue_timestamp(struct Q_timestamp *queue, FILE *fp)
+struct timestamp_buffer *create_timestamp_buffer(struct timestamp_buffer *buffer, FILE *fp)
 {
-	struct Q_timestamp_node *new_node = (struct Q_timestamp_node*)malloc(sizeof(struct Q_timestamp_node));
-	if(new_node == NULL)
+	buffer = (struct timestamp_buffer*)malloc(sizeof(struct timestamp_buffer));
+	if(buffer == NULL)
+	{
+		fprintf(fp, "%s: Cannot allocate memory for timestamp queue\n", get_log_time());
+		fflush(fp);
+		return NULL;
+	}
+	buffer->front_p = buffer->rear_p = NULL;
+	return buffer;
+}
+
+int initialize_timestamp_buffer(struct timestamp_buffer *buffer, FILE *fp)
+{
+	struct timestamp_buffer_node *new_timestamp_buffer_node = (struct timestamp_buffer_node*)malloc(sizeof(struct timestamp_buffer_node));
+	if(new_timestamp_buffer_node == NULL)
 	{
 		fprintf(fp, "%s: Cannot allocate memory for a new node\n", get_log_time());
 		fflush(fp);
 		return -1;
 	}
 
-	new_node->ms_record_timestamp = 0;
-	new_node->next = NULL;
-	queue->front = queue->rear = new_node;
-	pthread_mutex_init(&queue->front_lock, NULL);
-	pthread_mutex_init(&queue->rear_lock, NULL);
+	new_timestamp_buffer_node->ms_record_starttime = 0;
+	new_timestamp_buffer_node->next_p = NULL;
+	buffer->front_p = buffer->rear_p = new_timestamp_buffer_node;
+	pthread_mutex_init(&buffer->front_lock, NULL);
+	pthread_mutex_init(&buffer->rear_lock, NULL);
 	return 1;
 }
 
-struct Q_timestamp *create_queue_timestamp(struct Q_timestamp *queue, FILE *fp)
-{
-	queue = (struct Q_timestamp*)malloc(sizeof(struct Q_timestamp));
-	if(queue == NULL)
-	{
-		fprintf(fp, "%s: Cannot allocate memory\n", get_log_time());
-		fflush(fp);
-		return NULL;
-	}
-	queue->front = queue->rear=NULL;
-	return queue;
-}
 
-void queue_timestamp_free(struct Q_timestamp **queue)
+
+void free_timestamp_buffer(struct timestamp_buffer **buffer)
 {
-	if(queue != NULL)
+	if(buffer != NULL)
 	{
-		free(*queue);
-		*queue = NULL;
+		free(*buffer);
+		*buffer = NULL;
 	}
 }
 
-int insert_timestamp_queue(struct Q_timestamp *q, hptime_t timestamp, FILE *fp)
+int insert_timestamp_queue(struct timestamp_buffer *buffer, hptime_t timestamp, FILE *fp)
 {
 
-	struct Q_timestamp_node *temp = (struct Q_timestamp_node*)malloc(sizeof(struct Q_timestamp_node));
-  if (temp == NULL)
-  {
-  	fprintf(fp, "%s: Error allocating memory for node to store timestamp\n", get_log_time());
-  	fflush(fp);
-    return -1;
-  }
-	temp->ms_record_timestamp = timestamp;
- 	temp->next = NULL;
+    struct timestamp_buffer_node *timestamp_buffer_node_temp = (struct timestamp_buffer_node*)malloc(sizeof(struct timestamp_buffer_node));
+    if (timestamp_buffer_node_temp == NULL)
+    {
+        fprintf(fp, "%s: Error allocating memory for node to store timestamp\n", get_log_time());
+        fflush(fp);
+        return -1;
+    }
 
-  pthread_mutex_lock(&q->rear_lock);
-  if (q->rear == NULL)
-  {
-  	q->front = q->rear=temp;
-    return 1;
-  }
+	timestamp_buffer_node_temp->ms_record_starttime = timestamp;
+ 	timestamp_buffer_node_temp->next_p = NULL;
 
-  q->rear->next = temp;
-  q->rear = temp;
-  pthread_mutex_unlock(&q->rear_lock);
+    pthread_mutex_lock(&buffer->rear_lock);
+    if (buffer->rear_p == NULL)
+    {
+        buffer->front_p = buffer->rear_p = timestamp_buffer_node_temp;
+        return 1;
+    }
+
+  buffer->rear_p->next_p = timestamp_buffer_node_temp;
+  buffer->rear_p = timestamp_buffer_node_temp;
+  pthread_mutex_unlock(&buffer->rear_lock);
   return 1;
 }
-hptime_t getStartTime(struct  Q_timestamp *q_timestamp)
+hptime_t get_starttime(struct timestamp_buffer *buffer)
 {
+    struct timestamp_buffer_node *timestamp_buffer_node_temp = NULL;
+    struct timestamp_buffer_node *timestamp_buffer_node_temp_temp = NULL;
 
-    struct Q_timestamp_node *temp = NULL;
-    struct Q_timestamp_node *temp_node = NULL;
-
-    pthread_mutex_lock(&q_timestamp->front_lock);
-    temp = q_timestamp->front; // front of queue
-    temp_node = q_timestamp->front->next;
+    pthread_mutex_lock(&buffer->front_lock);
+    timestamp_buffer_node_temp = buffer->front_p; // front of queue
+    timestamp_buffer_node_temp_temp = buffer->front_p->next_p;
 
     // empty queue
-    if(temp_node == NULL)
+    if(timestamp_buffer_node_temp_temp == NULL)
     {
-        pthread_mutex_unlock(&q_timestamp->front_lock);
+        pthread_mutex_unlock(&buffer->front_lock);
         return 0;
     }
 
-    hptime_t starttime = temp_node->ms_record_timestamp;
-    temp_node->ms_record_timestamp = 0;
+    hptime_t starttime = timestamp_buffer_node_temp_temp->ms_record_starttime;
+    timestamp_buffer_node_temp_temp->ms_record_starttime = 0;
 
-    q_timestamp->front = temp_node;
-    free(temp);
-    pthread_mutex_unlock(&q_timestamp->front_lock);
+    buffer->front_p = timestamp_buffer_node_temp_temp;
+    free(timestamp_buffer_node_temp);
+    pthread_mutex_unlock(&buffer->front_lock);
 
     return starttime;
 
