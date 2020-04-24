@@ -34,7 +34,8 @@ void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11]
 
 
 int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,
-                 pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, struct timestamp_buffer *ts_queue, FILE *fp_log)
+                 pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
+                 struct timestamp_buffer *ts_queue, FILE *fp_log)
 {
     int32_t *sample_block_ns = malloc(sizeof(int32_t) * num_samples);
     int32_t *sample_block_ew = malloc(sizeof(int32_t) * num_samples);
@@ -86,6 +87,9 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
             usleep(1000);
             continue;
         }
+        ms_hptime2isotimestr(starttime, date_time, 1);
+        printf("%s\n", date_time);
+
 
         if(endtime != 0)
         {
@@ -93,9 +97,9 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
 
             if (sample_correction < 0)
             {
-                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
-                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
-                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
+                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
 
                 for (int j = 0; j < num_samples + sample_correction; j++)
                 {
@@ -110,11 +114,12 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_Z->datasamples = sample_block_z_temp;
 
                 packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
-                data_sample_counter = 0;
+                //printf("%d\n", packed_samples);
+
 
                 free(sample_block_ns_temp);
                 free(sample_block_ew_temp);
@@ -122,9 +127,9 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
             }
             else if (sample_correction > 0)
             {
-                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
-                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
-                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * num_samples + sample_correction);
+                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
 
                 for (int j = 0; j < num_samples; j++)
                 {
@@ -148,11 +153,11 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_Z->datasamples = sample_block_z_temp;
 
                 packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
-                data_sample_counter = 0;
+                //printf("%d\n", packed_samples);
 
                 free(sample_block_ns_temp);
                 free(sample_block_ew_temp);
@@ -167,12 +172,17 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_Z->datasamples = sample_block_z;
 
                 packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d %d\n", packed_records, packed_samples);
+                //printf("%d\n", packed_samples);
                 packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
-                data_sample_counter = 0;
+                //printf("%d\n\n", packed_samples);
+
+
             }
+            msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = num_samples;
+            msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
+            data_sample_counter = 0;
         }
 
         msr_NS->starttime = starttime;
@@ -239,7 +249,7 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
     if(diff_stn1_etn < 0)
     {
         int i = 0;
-        while(!(diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period))
+        while(1)
         {
             msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples - 1;
             msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
@@ -247,12 +257,17 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
             endtime = msr_endtime(msr_NS);
             diff_stn1_etn = starttime - endtime;
             i++;
+
+            if (diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period)
+                break;
         }
         return (-1*i);
     }
     // remove 1 sample
     else if(diff_stn1_etn == 0)
     {
+        msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples - 1;
+        msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
         return -1;
     }
 
@@ -260,7 +275,7 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
     else if (diff_stn1_etn > hptime_sample_period)
     {
         int i = 0;
-        while(!(diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period))
+        while(1)
         {
             msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples + 1;
             msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
@@ -268,6 +283,9 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
             endtime = msr_endtime(msr_NS);
             diff_stn1_etn = starttime - endtime;
             i++;
+
+            if (diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period)
+                break;
         }
         return i;
     }

@@ -110,9 +110,10 @@ hptime_t timespec2hptime(struct timespec* ts)
     //        year, jday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec, hptime_sec_frac,
     //        ms_time2hptime(year, jday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec, hptime_sec_frac));
 
-    long temp = (long)(round( (double)hptime_sec_frac/1000));
+    long temp = (hptime_sec_frac/1000);
     temp = temp * 1000;
 
+    //printf("temp: %ld\n", hptime_sec_frac);
     // LOP MS_TIME2HPTIME ERROR
     return (ms_time2hptime(year, jday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec, temp/**hptime_sec_frac)*/));
 

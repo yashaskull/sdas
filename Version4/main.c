@@ -156,10 +156,19 @@ hptime_t *hptime_p = &hptime_start;
 hptime_t hptime_temp = 0;
 
 int counter = 0;
+
+
 /* Main Program */
 int main()
 {
-
+   // while (1)
+   // {
+   //     *hptime_p = current_utc_hptime();
+   //     ms_hptime2isotimestr(hptime_start, date_time, 1);
+ // /      printf("%s\n", date_time);
+  //      sleep(1);
+  //  }
+  //  return -1;
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {
@@ -595,7 +604,7 @@ int main()
    // while(!kbhit())
    // {
 
-    //}
+   // }
     /* Initiate interrupt function that timestamps */
 
 /**
@@ -792,8 +801,8 @@ void free_data_buffer_samples(void)
     {
         struct data_buffer_node *data_buffer_node_temp = data_queue->front_p;
         data_queue->front_p = data_queue->front_p->next_p;
-        if (data_buffer_node_temp->sample != NULL)
-            printf("%s\n", data_buffer_node_temp->sample);
+        //if (data_buffer_node_temp->sample != NULL)
+            //printf("%s\n", data_buffer_node_temp->sample);
         free(data_buffer_node_temp->sample);
         free(data_buffer_node_temp);
         if(data_queue->front_p == NULL)
@@ -821,7 +830,8 @@ void *read_serial_buffer(void *arg)
                 //pthread_mutex_lock(&lock_timestamp);
                 // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records
-                //ms_hptime2isotimestr(hptime_start - hptime_temp, date_time, 1);
+                //printf("%lld\n", hptime_start);
+                //ms_hptime2isotimestr(hptime_start, date_time, 1);
                 //hptime_temp = hptime_start;
                 //printf("%s\n", date_time);
                 int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
