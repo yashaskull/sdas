@@ -541,7 +541,7 @@ extern int           msr_unpack (char *record, int reclen, MSRecord **ppmsr,
 		 	       //void *handlerdata, int64_t *packedsamples, flag flush, flag verbose);
 
 extern int           msr_pack (MSRecord *msr,
-		 	        int *packedsamples, flag flush, flag verbse, FILE *fp_log);
+		 	        int *packedsamples, flag flush, flag verbse, FILE *fp_log, char **record);
 
 extern int           msr_pack_header (MSRecord *msr, flag normalize, flag verbose);
 

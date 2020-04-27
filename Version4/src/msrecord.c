@@ -13,26 +13,54 @@ int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, 
     // printf("Record sent!\n");
 }
 */
-void initialize_msrecord(MSRecord **msr_temp, char network[11], char station[11],
-                         char location[11], char channelname[3], char dataquality,
-                         double samprate, int8_t encoding, int8_t byteorder,
-                         int64_t numsamples, char sampletype, int reclen)
+int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log)
 {
-    strcpy((*msr_temp)->network, network);
-	strcpy((*msr_temp)->station, station);
-	strcpy((*msr_temp)->location, location);
-	strcpy((*msr_temp)->channel, channelname);
-	(*msr_temp)->reclen = reclen;
-	(*msr_temp)->dataquality = dataquality;
-	(*msr_temp)->samprate = samprate;
-	(*msr_temp)->encoding = encoding; /* INT32 encoding */
-	(*msr_temp)->byteorder = byteorder; // MSB
-	(*msr_temp)->numsamples = numsamples;
-	(*msr_temp)->sampletype = sampletype; /* 32-bit integer */
-	(*msr_temp)->samplecnt = (*msr_temp)->numsamples;
+    if(!(msrecord->msr_NS = msr_init(msrecord->msr_NS)))
+    {
+        fprintf(fp_log,"%s: Failed to initialize ms record for NS component.\n", get_log_time());
+        return -1;
+    }
+    if(!(msrecord->msr_EW = msr_init(msrecord->msr_EW)))
+    {
+        fprintf(fp_log,"%s: Failed to initialize ms record for EW component.\n", get_log_time());
+        return -1;
+    }
+
+    if(!(msrecord->msr_Z = msr_init(msrecord->msr_Z)))
+    {
+        fprintf(fp_log,"%s: Failed to initialize ms record for Z component.\n", get_log_time());
+        return -1;
+    }
+    return 1;
 }
 
+void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members)
+{
+    strcpy(msrecord->msr_NS->network, msrecord_members->network);
+    strcpy(msrecord->msr_EW->network, msrecord_members->network);
+    strcpy(msrecord->msr_Z->network, msrecord_members->network);
 
+    strcpy(msrecord->msr_NS->station, msrecord_members->station);
+    strcpy(msrecord->msr_EW->station, msrecord_members->station);
+    strcpy(msrecord->msr_Z->station, msrecord_members->station);
+
+    strcpy(msrecord->msr_NS->location, msrecord_members->location);
+    strcpy(msrecord->msr_EW->location, msrecord_members->location);
+    strcpy(msrecord->msr_Z->location, msrecord_members->location);
+
+    strcpy(msrecord->msr_NS->channel, msrecord_members->channel_name_ns);
+	strcpy(msrecord->msr_EW->channel, msrecord_members->channel_name_ew);
+	strcpy(msrecord->msr_Z->channel, msrecord_members->channel_name_z);
+
+	msrecord->msr_NS->reclen = msrecord->msr_EW->reclen = msrecord->msr_Z->reclen = msrecord_members->reclen;
+	msrecord->msr_NS->dataquality = msrecord->msr_EW->dataquality = msrecord->msr_Z->dataquality = msrecord_members->dataquality;
+	msrecord->msr_NS->samprate = msrecord->msr_EW->samprate = msrecord->msr_Z->samprate = msrecord_members->samprate;
+    msrecord->msr_NS->encoding = msrecord->msr_EW->encoding = msrecord->msr_Z->encoding = msrecord_members->encoding;
+    msrecord->msr_NS->byteorder = msrecord->msr_EW->byteorder = msrecord->msr_Z->byteorder = msrecord_members->byteorder;
+    msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = 200;
+    msrecord->msr_NS->sampletype = msrecord->msr_EW->sampletype = msrecord->msr_Z->sampletype = msrecord_members->sampletype;
+    msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = 200;
+}
 int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
                  struct timestamp_buffer *ts_queue, FILE *fp_log)
@@ -59,7 +87,12 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
     ///////////////////////
     int packed_samples;
     int packed_records;
-
+    char *record = (char *)malloc(msr_NS->reclen);
+    if (record == NULL)
+    {
+        printf("Error allocating memory for record\n");
+        return -1;
+    }
 
     hptime_t starttime = 0;
     hptime_t endtime = 0;
@@ -113,11 +146,13 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_EW->datasamples = sample_block_ew_temp;
                 msr_Z->datasamples = sample_block_z_temp;
 
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
+                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
-                //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s\n", record);
                 //printf("%d\n", packed_samples);
 
 
@@ -152,11 +187,14 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_EW->datasamples = sample_block_ew_temp;
                 msr_Z->datasamples = sample_block_z_temp;
 
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s\n", record);
                 //printf("%d\n", packed_samples);
 
                 free(sample_block_ns_temp);
@@ -171,11 +209,14 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
                 msr_EW->datasamples = sample_block_ew;
                 msr_Z->datasamples = sample_block_z;
 
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log);
+                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
+                printf("%s\n", record);
                 //printf("%d\n\n", packed_samples);
 
 
@@ -228,6 +269,7 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
         }
     }
 
+    free(record);
     if (sample_block_ns != NULL)
         free (sample_block_ns);
     if (sample_block_ew != NULL)
@@ -737,15 +779,7 @@ void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp,
 
 */
 
-void *blink_LED(void *arg)
-{
-    //digitalWrite(22, HIGH);
-    usleep(100000);
-    //digitalWrite(22, LOW);
 
-    pthread_detach(pthread_self());
-    return NULL;
-}
 
 char *generate_stream_id(MSRecord *msr)
 {

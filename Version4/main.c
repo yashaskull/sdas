@@ -58,10 +58,10 @@ void TimeStamp(void);
 void *read_serial_buffer(void *arg);
 void free_timestamp_buffer_samples(void);
 void free_data_buffer_samples(void);
-int parse_config_file(FILE *fp);
+int parse_config_file();
+//int parse_config_file(FILE *fp);
 
 /******* Global Variables **************/
-
 
 // Data and TimeStamp structs
 struct  timestamp_buffer *timestamp_queue;
@@ -79,10 +79,12 @@ int stop_read_serial_buffer_thread = 1;
 int StopTimeStamp = 1;
 int StopTimeStampCont = 0;
 
+
 // MSR definitions
 MSRecord *msr_NS; // North South
 MSRecord *msr_EW; // East West
 MSRecord *msr_Z; // Z or Vertical
+
 
 // MSR Struct variables
 char network[11];
@@ -104,9 +106,9 @@ int save_mseed_file;
 int save_mseed_file_temp;
 
 // Channel name from the sensor
-char channel_name_ew[3];
-char channel_name_ns[3];
-char channel_name_z[3];
+//char channel_name_ew[3];
+//char channel_name_ns[3];
+//char channel_name_z[3];
 
 
 FILE *fp_log;
@@ -157,28 +159,24 @@ hptime_t hptime_temp = 0;
 
 int counter = 0;
 
-
+struct msrecord_struct msrecord;
+struct msrecord_struct_members msrecord_members;
 /* Main Program */
 int main()
 {
-   // while (1)
-   // {
-   //     *hptime_p = current_utc_hptime();
-   //     ms_hptime2isotimestr(hptime_start, date_time, 1);
- // /      printf("%s\n", date_time);
-  //      sleep(1);
-  //  }
-  //  return -1;
+
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {
         printf("Cannot create log file. Program exiting.\n");
         return -1;
     }
+
     // parse configuration file
-    if (parse_config_file(fp_log) == -1)
+    if (parse_config_file() == -1)
     {
         fprintf(fp_log, "%s: Error parsing configuration file. Exiting\n", get_log_time());
+        fclose(fp_log);
         return -1;
     }
 
@@ -195,7 +193,6 @@ int main()
     fprintf(fp_log, "%s: GPIO set up successfully\n", GetLogTime());
     ////////////////
 */
-
 
     //////////////////////////////////////////////////////////////////////////
     /* The Ring server is the main storage of MSEED packets.
@@ -214,75 +211,43 @@ int main()
 	}
     fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", get_log_time());
 
-    /* Allocate memory for MSRecord Struct */
-    if(!(msr_NS = msr_init(msr_NS)))
+    /** mseed record structure initialization
+    */
+    if (msrecord_struct_init(&msrecord, fp_log) == -1)
     {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct (NS component).\n", get_log_time());
-        // Free DL descriptor and disconnect
+        fprintf(fp_log, "%s: One or more ms record structures failed to initialize.\n", get_log_time());
+
+        if (fp_log != NULL)
+            fclose(fp_log);
+
         if (dlconn->link != -1)
             dl_disconnect(dlconn);
 
         if (dlconn)
             dl_freedlcp(dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
-
-        return -1;
-    }
-
-    if(!(msr_EW = msr_init(msr_EW)))
-    {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct (EW component).\n", get_log_time());
-        // Free DL descriptor and disconnect
-        if (dlconn->link != -1)
-            dl_disconnect(dlconn);
-
-        if (dlconn)
-            dl_freedlcp(dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
-
-        return -1;
-    }
-    if(!(msr_Z = msr_init(msr_Z)))
-    {
-        fprintf(fp_log, "%s: Error initializing memory for MSEED struct (Z component).\n", get_log_time());
-        // Free DL descriptor and disconnect
-        if (dlconn->link != -1)
-            dl_disconnect(dlconn);
-
-        if (dlconn)
-            dl_freedlcp(dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
 
         return -1;
     }
     fprintf(fp_log, "%s: Memory spaced allocated for MSR structure.\n", get_log_time());
     fflush(fp_log);
 
-    /* Intialize MSRecord struct */
-    // NS
-    initialize_msrecord(&msr_NS, network, station,location, channel_name_ns, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
-    // EW
-    initialize_msrecord(&msr_EW, network, station,location, channel_name_ew, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
-    // Z
-    initialize_msrecord(&msr_Z, network, station,location, channel_name_z, dataquality,samprate,encoding,byteorder,numsamples,sampletype,reclen);
-
+    /* Update MSRecord struct */
+    msrecord_struct_update(&msrecord, &msrecord_members);
     fprintf(fp_log, "%s: MSR initalized\n", get_log_time());
     //MaximumPackets(dlconn, fp_log);
 
-    char *temp = generate_stream_id(msr_NS);
+    char *temp = generate_stream_id(msrecord.msr_NS);
     strcpy(stream_id_ns, temp);
 
-    temp = generate_stream_id(msr_EW);
+    temp = generate_stream_id(msrecord.msr_EW);
     strcpy(stream_id_ew, temp);
 
-    temp = generate_stream_id(msr_Z);
+    temp = generate_stream_id(msrecord.msr_Z);
     strcpy(stream_id_z, temp);
+
+    printf("%s\n", stream_id_ns);
+    printf("%s\n", stream_id_ew);
+    printf("%s\n", stream_id_z);
 
 /**
     // if save2mseedfile is one, create save folders in usb drive if mounted
@@ -863,7 +828,7 @@ void *read_serial_buffer(void *arg)
 }
 
 
-int parse_config_file(FILE *fp)
+int parse_config_file()
 {
     config_t cfg, *cf;
     cf = &cfg;
@@ -886,7 +851,7 @@ int parse_config_file(FILE *fp)
     // msr struct variables
     const char *temp;
     if (config_lookup_string(cf, "msrstruct.network", &temp))
-        strcpy(network, temp);
+        strcpy(msrecord_members.network, temp);
     else
     {
         fprintf(fp_log, "%s: network not defined.\n", get_log_time());
@@ -894,7 +859,7 @@ int parse_config_file(FILE *fp)
     }
 
     if (config_lookup_string(cf, "msrstruct.station", &temp))
-        strcpy(station, temp);
+        strcpy(msrecord_members.station, temp);
     else
     {
         fprintf(fp_log, "%s: station not defined.\n", get_log_time());
@@ -902,7 +867,7 @@ int parse_config_file(FILE *fp)
     }
 
     if (config_lookup_string(cf, "msrstruct.location", &temp))
-        strcpy(location,temp);
+        strcpy(msrecord_members.location,temp);
     else
     {
         fprintf(fp_log, "%s: location not defined.\n", get_log_time());
@@ -910,7 +875,7 @@ int parse_config_file(FILE *fp)
     }
 
     if (config_lookup_string(cf, "msrstruct.dataquality", &temp))
-        dataquality = temp[0];//strcpy(dataquality, temp);
+        msrecord_members.dataquality = temp[0];//strcpy(dataquality, temp);
     else
     {
         fprintf(fp_log, "%s: dataquality not defined.", get_log_time());
@@ -919,7 +884,7 @@ int parse_config_file(FILE *fp)
 
     int temp_encoding;
     if (config_lookup_int(cf, "msrstruct.encoding", &temp_encoding))
-        encoding = (int8_t)temp_encoding;
+        msrecord_members.encoding = (int8_t)temp_encoding;
     else
     {
         fprintf(fp_log, "%s: encoding not defined\n", get_log_time());
@@ -927,7 +892,7 @@ int parse_config_file(FILE *fp)
     }
 
     if (config_lookup_string(cf, "msrstruct.sampletype", &temp))
-        sampletype = temp[0];
+        msrecord_members.sampletype = temp[0];
     else
     {
         fprintf(fp_log, "%s: sampletype not defined\n", get_log_time());
@@ -936,7 +901,7 @@ int parse_config_file(FILE *fp)
 
     double temp_samprate;
     if (config_lookup_float(cf, "msrstruct.samprate", &temp_samprate))
-        samprate = (double)temp_samprate;
+        msrecord_members.samprate = (double)temp_samprate;
     else
     {
         fprintf(fp_log, "%s: samprate not defined\n", get_log_time());
@@ -945,15 +910,16 @@ int parse_config_file(FILE *fp)
 
     int temp_byteorder;
     if (config_lookup_int(cf, "msrstruct.byteorder", &temp_byteorder))
-        byteorder = (int8_t)temp_byteorder;
+        msrecord_members.byteorder = (int8_t)temp_byteorder;
     else
     {
         fprintf(fp_log, "%s: byteorder not defined\n", get_log_time());
         return -1;
     }
 
-    if (config_lookup_int(cf, "msrstruct.reclen", &reclen))
-        ;
+    int temp_reclen;
+    if (config_lookup_int(cf, "msrstruct.reclen", &temp_reclen))
+        msrecord_members.reclen = (int)temp_reclen;
     else
     {
         fprintf(fp_log, "%s: reclen not defined\n", get_log_time());
@@ -968,15 +934,29 @@ int parse_config_file(FILE *fp)
         fprintf(fp_log, "%s: Less than three channel names specified in configuration file. For single channel operation, adjust code.\n", get_log_time());
         return -1;
     }
+
+    //char ns_temp[3];
+    //char ew_temp[3];
+    //char z_temp[3];
     for (int i = 0; i < count; i ++)
     {
         const char *temp = config_setting_get_string_elem(channel_names, i);
         if (temp[2] == 'N')
-            strcpy(channel_name_ns, temp);
+        {
+            strcpy(msrecord_members.channel_name_ns, temp);
+            //strcpy(ns_temp, temp);
+        }
         else if(temp[2] == 'E')
-            strcpy(channel_name_ew, temp);
+        {
+            strcpy(msrecord_members.channel_name_ew, temp);
+            //strcpy(ew_temp, temp);
+        }
         else
-            strcpy(channel_name_z, temp);
+        {
+            //strcpy(z_temp, temp);
+            strcpy(msrecord_members.channel_name_z, temp);
+        }
+
         //strcpy(ChannelNameEW1, config_setting_get_string_elem(channelnames, i));
     }
 
@@ -1001,6 +981,9 @@ int parse_config_file(FILE *fp)
     }
     save_mseed_file_temp = save_mseed_file;
     config_destroy(cf);
+
     return 1;
 }
+
+
 

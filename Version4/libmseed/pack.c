@@ -112,7 +112,7 @@ void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
   }
 }
 
-int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE *fp_log)
+int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE *fp_log, char **record)
 {
 
 	//printf("Inside msr pack\n");
@@ -475,7 +475,9 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
   if (verbose > 2)
     ms_log (1, "%s: Packed %d total samples\n", srcname, totalpackedsamples);
 
-
+  ///////////
+  memcpy(*record, rawrec, msr->reclen);
+  //////////
   free (rawrec);
 
   return recordcnt;

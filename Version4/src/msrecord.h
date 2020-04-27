@@ -28,9 +28,35 @@
 
 static flag verbose = 1;
 flag overwrite;
-//int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen );
-void initialize_msrecord( MSRecord **msr_temp, char network[11], char station[11], char location[11], char channelname[3], char dataquality,
-                          double samprate, int8_t encoding, int8_t byteorder, int64_t numsamples, char sampletype, int reclen);
+
+struct msrecord_struct
+{
+    MSRecord *msr_NS;
+    MSRecord *msr_EW;
+    MSRecord *msr_Z;
+};
+
+struct msrecord_struct_members
+{
+    // MSR Struct variables
+    char network[11];
+    char station[11];
+    char location[11];
+    char dataquality;
+    int samprate;
+    int8_t encoding; // INT32 encoding //FLOAT32 4
+    int8_t byteorder; // MSB first
+    int64_t numsamples;
+    char sampletype; // 32-bit integer, f - float
+    int reclen;
+
+    // Channel name from the sensor
+    char channel_name_ew[4];
+    char channel_name_ns[4];
+    char channel_name_z[4];
+};
+int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log);
+void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members);
 
 int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,pthread_cond_t *cond1,
                  pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, struct timestamp_buffer *ts_queue, FILE *fp_log);
@@ -41,9 +67,6 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
 
 int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample_period,
                     MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z);
-
-void *blink_LED(void *arg);
-
 char *generate_stream_id(MSRecord *msr);
 
 #endif // MSRECORD_H_INCLUDED
