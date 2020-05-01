@@ -34,6 +34,10 @@ struct msrecord_struct
     MSRecord *msr_NS;
     MSRecord *msr_EW;
     MSRecord *msr_Z;
+
+    char stream_id_ew[50];
+    char stream_id_ns[50];
+    char stream_id_z[50];
 };
 
 struct msrecord_struct_members
@@ -58,15 +62,19 @@ struct msrecord_struct_members
 int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log);
 void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members);
 
-int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,pthread_cond_t *cond1,
-                 pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue, struct timestamp_buffer *ts_queue, FILE *fp_log);
+int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
+                 pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn);
 
 //void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
   //             int BlockLength, int Save2MseedFile, int Save2MseedFile_temp, char *SaveFolderUSBE, char *SaveFolderUSBN, char *SaveFolderUSBZ,
     //           char StreamIDE[50], char StreamIDN[50], char StreamIDZ[50], int reclen, DLCP *dlconn, int *tag);
 
-int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample_period,
-                    MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z);
+int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sample_period,
+                    struct msrecord_struct *msrecord);
+
 char *generate_stream_id(MSRecord *msr);
+
+int msrecord_2_dlserver(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log);
 
 #endif // MSRECORD_H_INCLUDED

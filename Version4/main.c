@@ -59,13 +59,15 @@ void *read_serial_buffer(void *arg);
 void free_timestamp_buffer_samples(void);
 void free_data_buffer_samples(void);
 int parse_config_file();
+void msrecord_free();
+void dlconn_free();
+
 //int parse_config_file(FILE *fp);
 
 /******* Global Variables **************/
 
 // Data and TimeStamp structs
 struct  timestamp_buffer *timestamp_queue;
-
 // data buffer is a queue type implementation
 struct data_buffer *data_queue;
 
@@ -80,24 +82,6 @@ int StopTimeStamp = 1;
 int StopTimeStampCont = 0;
 
 
-// MSR definitions
-MSRecord *msr_NS; // North South
-MSRecord *msr_EW; // East West
-MSRecord *msr_Z; // Z or Vertical
-
-
-// MSR Struct variables
-char network[11];
-char station[11];
-char location[11];
-char dataquality;
-int samprate;
-int8_t encoding; // INT32 encoding //FLOAT32 4
-int8_t byteorder; // MSB first
-int64_t numsamples = 200;
-char sampletype; // 32-bit integer, f - float
-int reclen;
-
 // usb drive location to store mseed files
 char mseed_volume[15];
 
@@ -105,19 +89,12 @@ char mseed_volume[15];
 int save_mseed_file;
 int save_mseed_file_temp;
 
-// Channel name from the sensor
-//char channel_name_ew[3];
-//char channel_name_ns[3];
-//char channel_name_z[3];
-
-
 FILE *fp_log;
 // usb mount command
 char *MountCommand = "mount | grep -q ";
 char CheckMount[70];
 
 // log file definition
-
 // datalink connection definition
 DLCP *dlconn;
 
@@ -141,21 +118,17 @@ char source_name_ew[50];
 char Source_name_ns[50];
 char source_name_z[50];
 
-//
-int tag = 0;
-
-
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t lock_timestamp;
 
 /////////////////////////
 char date_time [27];
-pthread_mutex_t lock_timestamp;
 
 hptime_t  hptime_start = 0;
 hptime_t *hptime_p = &hptime_start;
+hptime_t hptime_temp = 0;
 
 ////////////////////////
-hptime_t hptime_temp = 0;
 
 int counter = 0;
 
@@ -177,9 +150,10 @@ int main()
     {
         fprintf(fp_log, "%s: Error parsing configuration file. Exiting\n", get_log_time());
         fclose(fp_log);
+
         return -1;
     }
-
+    msrecord_members.numsamples = 200;
 /**
     // GPIO setup
     /////////////////
@@ -207,6 +181,7 @@ int main()
 		fprintf(fp_log, "%s: Failed to connect to DL server. Please try again.\n", get_log_time());
       //  fflush(fp_log);
 		fclose(fp_log);
+
 		return -1;
 	}
     fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", get_log_time());
@@ -216,15 +191,8 @@ int main()
     if (msrecord_struct_init(&msrecord, fp_log) == -1)
     {
         fprintf(fp_log, "%s: One or more ms record structures failed to initialize.\n", get_log_time());
-
-        if (fp_log != NULL)
-            fclose(fp_log);
-
-        if (dlconn->link != -1)
-            dl_disconnect(dlconn);
-
-        if (dlconn)
-            dl_freedlcp(dlconn);
+        fclose(fp_log);
+        dlconn_free();
 
         return -1;
     }
@@ -237,17 +205,13 @@ int main()
     //MaximumPackets(dlconn, fp_log);
 
     char *temp = generate_stream_id(msrecord.msr_NS);
-    strcpy(stream_id_ns, temp);
+    strcpy(msrecord.stream_id_ns, temp);
 
     temp = generate_stream_id(msrecord.msr_EW);
-    strcpy(stream_id_ew, temp);
+    strcpy(msrecord.stream_id_ew, temp);
 
     temp = generate_stream_id(msrecord.msr_Z);
-    strcpy(stream_id_z, temp);
-
-    printf("%s\n", stream_id_ns);
-    printf("%s\n", stream_id_ew);
-    printf("%s\n", stream_id_z);
+    strcpy(msrecord.stream_id_z, temp);
 
 /**
     // if save2mseedfile is one, create save folders in usb drive if mounted
@@ -283,24 +247,9 @@ int main()
     if(!(data_queue = create_data_buffer(data_queue, fp_log)))
     {
         fprintf(fp_log, "%s: Could not allocate data buffer, out of memory? \n", get_log_time());
-
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
-
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        msrecord_free();
+        dlconn_free();
+        fclose(fp_log);
 
         return -1;
     }
@@ -310,25 +259,11 @@ int main()
         fprintf(fp_log, "%s: Error in initializing data buffer. Try again.\n", get_log_time());
         // de-allocate timestamp queue
         free_data_buffer(&data_queue);
-
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        dlconn_free();
+        fclose(fp_log);
 
 		return -1;
     }
@@ -344,26 +279,11 @@ int main()
 
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
-
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        dlconn_free();
+        fclose(fp_log);
 
 		return -1;
     }
@@ -372,31 +292,15 @@ int main()
     /* Initialize timestamp queue */
     if(initialize_timestamp_buffer(timestamp_queue, fp_log) == -1)
     {
-
         fprintf(fp_log, "%s: Error in initializing queue. Try again\n", get_log_time());
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
         free_timestamp_buffer(&timestamp_queue);
-
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        dlconn_free();
+        fclose(fp_log);
 
 		return -1;
     }
@@ -407,28 +311,15 @@ int main()
     if (open_serial_port() == -1)
 	{
 		fprintf(fp_log, "%s: Error opening port. Please try again\n", get_log_time());
-
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
+        free_timestamp_buffer_samples();
+        free_timestamp_buffer(&timestamp_queue);
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        dlconn_free();
+        fclose(fp_log);
 
 		return -1;
 	}
@@ -439,31 +330,17 @@ int main()
 	if (serial_port_settings() == -1)                           // Currently set at 19200. Will have to go into function
 	{                                                            // to manually change it.
         fprintf(fp_log, "%s:  Error in setting port attributes. Please try again\n", get_log_time());
-
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
+        free_timestamp_buffer_samples();
+        free_timestamp_buffer(&timestamp_queue);
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
+        dlconn_free();
         // close serial port
         close_serial();
-
-        if (fp_log != NULL)
-            fclose(fp_log);
+        fclose(fp_log);
 
 		return -1;
 	}
@@ -482,26 +359,14 @@ int main()
         //queue_timestamp_free(&q_timestamp);
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
+        free_timestamp_buffer_samples();
+        free_timestamp_buffer(&timestamp_queue);
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
+        dlconn_free();
         // close serial port
         close_serial();
-
         if (fp_log != NULL)
             fclose(fp_log);
 
@@ -517,41 +382,37 @@ int main()
     // REMEMBER TO PTHREAD_MUTEX_DESTROY WHEN EXITING
     if (pthread_mutex_init(&lock_timestamp, NULL) != 0)
     {
-        printf("mutex init has failed\n");
-        return -1;
+        fprintf(fp_log, "%s: mutex init has failed\n", get_log_time());
+        free_data_buffer_samples();
+        free_data_buffer(&data_queue);
+        free_timestamp_buffer_samples();
+        free_timestamp_buffer(&timestamp_queue);
+        // Free msr struct
+        msrecord_free();
+        // Free DL descriptor and disconnect
+        dlconn_free();
+        // close serial port
+        close_serial();
+        if (fp_log != NULL)
+            fclose(fp_log);
+
+		return -1;
     }
 
     pthread_t read_serial_buffer_thread_ID;
     if (pthread_create(&read_serial_buffer_thread_ID, NULL, read_serial_buffer, NULL) != 0)
     {
         fprintf(fp_log, "%s: Error in creating thread: HandleMSEEDRecord\n", get_log_time());
-        // timestamp_queue_free();
-        // de-allocate timestamp queue
-        //queue_timestamp_free(&q_timestamp);
-
         free_data_buffer_samples();
         free_data_buffer(&data_queue);
-
+        free_timestamp_buffer_samples();
+        free_timestamp_buffer(&timestamp_queue);
         // Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
-
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
-
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
-
+        msrecord_free();
         // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
-
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
+        dlconn_free();
         // close serial port
         close_serial();
-
         if (fp_log != NULL)
             fclose(fp_log);
 
@@ -563,12 +424,12 @@ int main()
     //printf("Waiting on condition variable cond1\n");
     //write_serial();
     //pthread_cond_wait(&cond1, &lock_timestamp);
-
-    process_data(msr_NS, msr_EW, msr_Z, numsamples, &hptime_start, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log);
-   // write_serial();
+    //int numsaples = 200;
+    process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn);
+    //write_serial();
    // while(!kbhit())
-   // {
-
+    //{
+    //    usleep(1000);
    // }
     /* Initiate interrupt function that timestamps */
 
@@ -670,32 +531,19 @@ int main()
     free_timestamp_buffer_samples();
     free_timestamp_buffer(&timestamp_queue);
 
-// Free msr struct
-        msr_NS->datasamples = NULL;
-        msr_free(&msr_NS);
+    // Free msr struct
+    msrecord_free();
 
-        msr_EW->datasamples = NULL;
-        msr_free(&msr_EW);
+    // Free DL descriptor and disconnect
+    dlconn_free();
 
-        msr_Z->datasamples = NULL;
-        msr_free(&msr_Z);
+    // close serial port
+    close_serial();
 
-        // Free DL descriptor and disconnect
-        if ( dlconn->link != -1 )
-            dl_disconnect (dlconn);
+    fclose(fp_log);
+    printf("Program end.\n");
 
-        if ( dlconn )
-            dl_freedlcp (dlconn);
-
-        // close serial port
-        close_serial();
-
-        if (fp_log != NULL)
-            fclose(fp_log);
-
-    printf("Hello world\n");
     return 0;
-
 }
 
 /**
@@ -796,7 +644,7 @@ void *read_serial_buffer(void *arg)
                 // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records
                 //printf("%lld\n", hptime_start);
-                //ms_hptime2isotimestr(hptime_start, date_time, 1);
+                //ms_hptime2isotimestr(hptime_start - hptime_temp, date_time, 1);
                 //hptime_temp = hptime_start;
                 //printf("%s\n", date_time);
                 int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
@@ -985,5 +833,23 @@ int parse_config_file()
     return 1;
 }
 
+void msrecord_free()
+{
+    msrecord.msr_NS->datasamples = NULL;
+    msr_free(&msrecord.msr_NS);
 
+    msrecord.msr_EW->datasamples = NULL;
+    msr_free(&msrecord.msr_EW);
 
+    msrecord.msr_Z->datasamples = NULL;
+    msr_free(&msrecord.msr_Z);
+}
+
+void dlconn_free()
+{
+    if ( dlconn->link != -1 )
+        dl_disconnect (dlconn);
+
+    if ( dlconn )
+        dl_freedlcp (dlconn);
+}

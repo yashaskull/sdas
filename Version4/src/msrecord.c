@@ -57,17 +57,17 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
 	msrecord->msr_NS->samprate = msrecord->msr_EW->samprate = msrecord->msr_Z->samprate = msrecord_members->samprate;
     msrecord->msr_NS->encoding = msrecord->msr_EW->encoding = msrecord->msr_Z->encoding = msrecord_members->encoding;
     msrecord->msr_NS->byteorder = msrecord->msr_EW->byteorder = msrecord->msr_Z->byteorder = msrecord_members->byteorder;
-    msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = 200;
+    msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = msrecord_members->numsamples;
     msrecord->msr_NS->sampletype = msrecord->msr_EW->sampletype = msrecord->msr_Z->sampletype = msrecord_members->sampletype;
-    msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = 200;
+    msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = msrecord_members->numsamples;
 }
-int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_samples, hptime_t *hptime_starttime,
+int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log)
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn)
 {
-    int32_t *sample_block_ns = malloc(sizeof(int32_t) * num_samples);
-    int32_t *sample_block_ew = malloc(sizeof(int32_t) * num_samples);
-    int32_t *sample_block_z = malloc(sizeof(int32_t) * num_samples);
+    int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members->numsamples);
+    int32_t *sample_block_ew = malloc(sizeof(int32_t) * msrecord_members->numsamples);
+    int32_t *sample_block_z = malloc(sizeof(int32_t) * msrecord_members->numsamples);
 
     if (sample_block_ns == NULL || sample_block_ew == NULL || sample_block_z == NULL)
     {
@@ -87,7 +87,7 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
     ///////////////////////
     int packed_samples;
     int packed_records;
-    char *record = (char *)malloc(msr_NS->reclen);
+    char *record = (char *)malloc(msrecord_members->reclen);
     if (record == NULL)
     {
         printf("Error allocating memory for record\n");
@@ -98,17 +98,14 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
     hptime_t endtime = 0;
     hptime_t hptime_diff;
 
-    float sample_period = 1/200.0;
+    //float sample_period = 1/200.0;
     hptime_t hptime_sample_period = ms_time2hptime(1970, 01, 00, 00, 00, 5000);
     ///////////////////////
-
-    int flag = 0;
     //////
     write_serial();
 
     printf("Waiting on condition variable cond1\n");
     pthread_cond_wait(cond1, lock_timestamp);
-
 
     while(!kbhit())
     {
@@ -120,118 +117,87 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
             usleep(1000);
             continue;
         }
-        ms_hptime2isotimestr(starttime, date_time, 1);
-        printf("%s\n", date_time);
+        //ms_hptime2isotimestr(starttime, date_time, 1);
+        //printf("%s\n", date_time);
 
 
         if(endtime != 0)
         {
-            int sample_correction = time_correction(starttime, endtime, hptime_sample_period, msr_NS, msr_EW, msr_Z);
+            int sample_correction = time_correction(starttime, &endtime, hptime_sample_period, msrecord);
+            int new_numsamples = msrecord_members->numsamples + sample_correction;
 
-            if (sample_correction < 0)
+            int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * (msrecord->msr_NS->numsamples));
+            int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * (msrecord->msr_EW->numsamples));
+            int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * (msrecord->msr_Z->numsamples));
+
+            for (int j = 0; j < new_numsamples; j++)
             {
-                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
-                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
-                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+                sample_block_ns_temp[j] = sample_block_ns[j];
+                sample_block_ew_temp[j] = sample_block_ew[j];
+                sample_block_z_temp[j] = sample_block_z[j];
 
-                for (int j = 0; j < num_samples + sample_correction; j++)
+                if (j == msrecord_members->numsamples-1)
                 {
-                    sample_block_ns_temp[j] = sample_block_ns[j];
-                    sample_block_ew_temp[j] = sample_block_ew[j];
-                    sample_block_z_temp[j] = sample_block_z[j];
+                    if (new_numsamples <= msrecord_members->numsamples)
+                        break;
+                    else
+                    {
+                        int k = 0;
+                        while (k < sample_correction)
+                        {
+                            sample_block_ns_temp[msrecord_members->numsamples + k] = sample_block_ns_temp[msrecord_members->numsamples - 1];
+                            sample_block_ew_temp[msrecord_members->numsamples + k] = sample_block_ew_temp[msrecord_members->numsamples - 1];
+                            sample_block_z_temp[msrecord_members->numsamples+ k] = sample_block_z_temp[msrecord_members->numsamples - 1];
+                            k++;
+                        }
+                        break;
+                    }
                 }
-                // no correction. create record
-                // create ms records for each channel
-                msr_NS->datasamples = sample_block_ns_temp;
-                msr_EW->datasamples = sample_block_ew_temp;
-                msr_Z->datasamples = sample_block_z_temp;
-
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
-                //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s\n", record);
-                //printf("%d\n", packed_samples);
-
-
-                free(sample_block_ns_temp);
-                free(sample_block_ew_temp);
-                free(sample_block_z_temp);
             }
-            else if (sample_correction > 0)
-            {
-                int32_t *sample_block_ns_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
-                int32_t *sample_block_ew_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
-                int32_t *sample_block_z_temp = malloc(sizeof(int32_t) * (num_samples + sample_correction));
+            msrecord->msr_NS->datasamples = sample_block_ns_temp;
+            msrecord->msr_EW->datasamples = sample_block_ew_temp;
+            msrecord->msr_Z->datasamples = sample_block_z_temp;
 
-                for (int j = 0; j < num_samples; j++)
-                {
-                    sample_block_ns_temp[j] = sample_block_ns[j];
-                    sample_block_ew_temp[j] = sample_block_ew[j];
-                    sample_block_z_temp[j] = sample_block_z[j];
-                }
+            // any record can be used to get the starttime since they all have the same starttime
+            hptime_t starttime_dl_server = msrecord->msr_NS->starttime;
 
-                int k = 0;
-                while (k < sample_correction)
-                {
-                    sample_block_ns_temp[num_samples + k] = sample_block_ns_temp[num_samples - 1];
-                    sample_block_ew_temp[num_samples + k] = sample_block_ns_temp[num_samples - 1];
-                    sample_block_z_temp[num_samples+ k] = sample_block_ns_temp[num_samples - 1];
-                    k++;
-                }
-                // no correction. create record
-                // create ms records for each channel
-                msr_NS->datasamples = sample_block_ns_temp;
-                msr_EW->datasamples = sample_block_ew_temp;
-                msr_Z->datasamples = sample_block_z_temp;
 
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
+            packed_records = msr_pack(msrecord->msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
+            msrecord_2_dlserver(record, msrecord->stream_id_ns, endtime, starttime_dl_server,
+                                dlconn, msrecord_members->reclen, fp_log);
+                //printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
+            packed_records = msr_pack(msrecord->msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
+            msrecord_2_dlserver(record, msrecord->stream_id_ew, endtime, starttime_dl_server,
+                                dlconn, msrecord_members->reclen, fp_log);
+                //printf("%s  ", record);
                 //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s\n", record);
-                //printf("%d\n", packed_samples);
-
-                free(sample_block_ns_temp);
-                free(sample_block_ew_temp);
-                free(sample_block_z_temp);
-            }
-            else
-            {
-                 // no correction. create record
-                // create ms records for each channel
-                msr_NS->datasamples = sample_block_ns;
-                msr_EW->datasamples = sample_block_ew;
-                msr_Z->datasamples = sample_block_z;
-
-                packed_records = msr_pack(msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
-                //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_EW, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s  ", record);
-                //printf("%d\n", packed_samples);
-                packed_records = msr_pack(msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
-                printf("%s\n", record);
-                //printf("%d\n\n", packed_samples);
+            packed_records = msr_pack(msrecord->msr_Z, &packed_samples, 1, verbose -1, fp_log, &record);
+            msrecord_2_dlserver(record, msrecord->stream_id_z, endtime, starttime_dl_server,
+                                dlconn, msrecord_members->reclen, fp_log);
+                //printf("%s\n", record);
 
 
-            }
-            msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = num_samples;
-            msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
+            ms_hptime2isotimestr(starttime_dl_server, date_time, 1);
+            printf("%s\n", date_time);
+            ms_hptime2isotimestr(endtime, date_time, 1);
+            printf("%s\n", date_time);
+            printf("%d\n", packed_samples);
+            free(sample_block_ns_temp);
+            free(sample_block_ew_temp);
+            free(sample_block_z_temp);
+
+            msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = msrecord_members->numsamples;
+            msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = msrecord_members->numsamples;
             data_sample_counter = 0;
         }
 
-        msr_NS->starttime = starttime;
-        msr_EW->starttime = starttime;
-        msr_Z->starttime =  starttime;
-        endtime = msr_endtime(msr_NS);
+        msrecord->msr_NS->starttime = starttime;
+        msrecord->msr_EW->starttime = starttime;
+        msrecord->msr_Z->starttime =  starttime;
+        endtime = msr_endtime(msrecord->msr_NS);
 
-        while(data_sample_counter != num_samples)
+        while(data_sample_counter != msrecord_members->numsamples)
         {
             get_data_buffer_sample_rv = get_data_buffer_sample(d_queue, &data_sample, fp_log);
             if (get_data_buffer_sample_rv == -1)
@@ -281,11 +247,11 @@ int process_data(MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z, int num_sa
     return 1;
 }
 
-int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample_period,
-                    MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z)
+int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sample_period,
+                    struct msrecord_struct *msrecord)
 {
     // run time correction algorithm
-    hptime_t diff_stn1_etn = starttime - endtime;
+    hptime_t diff_stn1_etn = starttime - *endtime;
 
     // remove samples
     if(diff_stn1_etn < 0)
@@ -293,11 +259,17 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
         int i = 0;
         while(1)
         {
-            msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples - 1;
-            msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
+            msrecord->msr_NS->numsamples = msrecord->msr_NS->numsamples - 1;
+            msrecord->msr_EW->numsamples = msrecord->msr_EW->numsamples - 1;
+            msrecord->msr_Z->numsamples = msrecord->msr_Z->numsamples - 1;
 
-            endtime = msr_endtime(msr_NS);
-            diff_stn1_etn = starttime - endtime;
+            msrecord->msr_NS->samplecnt = msrecord->msr_NS->numsamples;
+            msrecord->msr_EW->samplecnt = msrecord->msr_EW->numsamples;
+            msrecord->msr_Z->samplecnt = msrecord->msr_Z->numsamples;
+
+
+            *endtime = msr_endtime(msrecord->msr_NS);
+            diff_stn1_etn = starttime - *endtime;
             i++;
 
             if (diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period)
@@ -308,8 +280,13 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
     // remove 1 sample
     else if(diff_stn1_etn == 0)
     {
-        msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples - 1;
-        msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
+        msrecord->msr_NS->numsamples = msrecord->msr_NS->numsamples - 1;
+        msrecord->msr_EW->numsamples = msrecord->msr_EW->numsamples - 1;
+        msrecord->msr_Z->numsamples = msrecord->msr_Z->numsamples - 1;
+
+        msrecord->msr_NS->samplecnt = msrecord->msr_NS->numsamples;
+        msrecord->msr_EW->samplecnt = msrecord->msr_EW->numsamples;
+        msrecord->msr_Z->samplecnt = msrecord->msr_Z->numsamples;
         return -1;
     }
 
@@ -319,11 +296,16 @@ int time_correction(hptime_t starttime, hptime_t endtime, hptime_t hptime_sample
         int i = 0;
         while(1)
         {
-            msr_NS->numsamples = msr_EW->numsamples = msr_Z->numsamples = msr_NS->numsamples + 1;
-            msr_NS->samplecnt = msr_EW->samplecnt = msr_Z->samplecnt = msr_NS->numsamples;
+            msrecord->msr_NS->numsamples = msrecord->msr_NS->numsamples + 1;
+            msrecord->msr_EW->numsamples = msrecord->msr_EW->numsamples + 1;
+            msrecord->msr_Z->numsamples = msrecord->msr_Z->numsamples + 1;
 
-            endtime = msr_endtime(msr_NS);
-            diff_stn1_etn = starttime - endtime;
+            msrecord->msr_NS->samplecnt = msrecord->msr_NS->numsamples;
+            msrecord->msr_EW->samplecnt = msrecord->msr_EW->numsamples;
+            msrecord->msr_Z->samplecnt = msrecord->msr_Z->numsamples;
+
+            *endtime = msr_endtime(msrecord->msr_NS);
+            diff_stn1_etn = starttime - *endtime;
             i++;
 
             if (diff_stn1_etn > 0 && diff_stn1_etn <= hptime_sample_period)
@@ -794,3 +776,21 @@ char *generate_stream_id(MSRecord *msr)
     return stream_id;
 
 }
+
+
+int msrecord_2_dlserver(char *record, char streamID[50], hptime_t record_endtime,
+                        hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log)
+{
+    // check dlconn
+	// if dlconn valid, ringserver connection is valid
+	// if dlconn not valid, ringserver connection not valid. Try connecting back to ringserver
+	if ( dl_write (dlconn, record, reclen, streamID, record_starttime, record_endtime, 1) < 0 )
+	{
+		//fprintf(stderr,"Error sending %s record to datalink server.\n", streamID);
+		fprintf(fp_log,"Error sending %s record to datalink server.\n", streamID);
+		return -1;
+	}
+	return 1;
+
+}
+

@@ -28,7 +28,7 @@ char streamid[100];
 hptime_t endtime;
 
 /** Added function */
-int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log);
+//int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log);
 void record_handler(char *record, int reclen, void *ofp, FILE *fp_log);
 /* Function(s) internal to this file */
 static int msr_pack_header_raw (MSRecord *msr, char *rawrec, int maxheaderlen,
@@ -84,7 +84,7 @@ flag packdatabyteorder   = -2;
 //msr_pack (MSRecord *msr, void (*record_handler) (char *, int, void *),
   //        void *handlerdata, int64_t *packedsamples, flag flush, flag verbose)
 //{
-
+/**
 int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log )
 {
 
@@ -98,7 +98,7 @@ int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, 
 		return -1;
 	}
 }
-
+*/
 // writes miniSEED packets to a file
 void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
 {
@@ -450,6 +450,8 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
       *packedsamples = totalpackedsamples;
     msr->ststate->packedsamples += packsamples;
 
+    memcpy(*record, rawrec, msr->reclen);
+
     /* Update record header for next record */
     msr->sequence_number = (msr->sequence_number >= 999999) ? 1 : msr->sequence_number + 1;
     if (msr->samprate > 0)
@@ -476,7 +478,6 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
     ms_log (1, "%s: Packed %d total samples\n", srcname, totalpackedsamples);
 
   ///////////
-  memcpy(*record, rawrec, msr->reclen);
   //////////
   free (rawrec);
 
