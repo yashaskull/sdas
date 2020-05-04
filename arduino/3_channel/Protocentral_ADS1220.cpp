@@ -2,20 +2,9 @@
 #include "Protocentral_ADS1220.h"
 #include <SPI.h>
 
-void Protocentral_ADS1220::writeRegister_Z(uint8_t address, uint8_t value)
-{
-  digitalWrite(ADS1220_CS_PIN_3,LOW);
-  delay(5);
-  //delayMicroseconds(58);
-  SPI.transfer(WREG|(address<<2));        
-  SPI.transfer(value); 
-  delay(5);
-  //delayMicroseconds(0.025);
-  digitalWrite(ADS1220_CS_PIN_3,HIGH);
-}
+
 void Protocentral_ADS1220::writeRegister(uint8_t address, uint8_t value)
 {
-  
   
   digitalWrite(ADS1220_CS_PIN_1,LOW);
   delay(5);
@@ -35,7 +24,7 @@ void Protocentral_ADS1220::writeRegister(uint8_t address, uint8_t value)
   //delayMicroseconds(0.025);
   digitalWrite(ADS1220_CS_PIN_2,HIGH);
   /////////////////////////////////////
-  /**
+  
   digitalWrite(ADS1220_CS_PIN_3,LOW);
   delay(5);
   //delayMicroseconds(58);
@@ -43,7 +32,7 @@ void Protocentral_ADS1220::writeRegister(uint8_t address, uint8_t value)
   SPI.transfer(value); 
   delay(5);
   //delayMicroseconds(0.025);
-  digitalWrite(ADS1220_CS_PIN_3,HIGH);*/
+  digitalWrite(ADS1220_CS_PIN_3,HIGH);
 }  
 
 uint8_t Protocentral_ADS1220::readRegister(uint8_t address)
@@ -83,23 +72,14 @@ void Protocentral_ADS1220::begin()
   */
   Config_Reg0 = 0x81; // 0x21 AINP=AIN0 AINN=AIN3  1 gain  pga disabled, 0x25 gain 4, 0x23 gain of 2, 0x01 AINP = AIN0 AINN = AIN1, 0x81 AINP =  AIN0, AINN = AVSS, 0xB1 AINP = AIN3 AINN = AVSS
   Config_Reg1 = 0x84; // 0x84 330 SPS/200, A4 600 SPS, 0x04 20 SPS, 0x24 45 SPS, 0x44 90 SPS, 0x64 175 SPS/100, 0x84 330 SPS, 0xC4 1000 SPS, 0XB4 TURBO MODE @ 1200 SPS, 0xD4 tubo mode @ 2000
-  Config_Reg2 = 0x00; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
-  Config_Reg2_Z = 0x00;
+  Config_Reg2 = 0xC0; // 0xCO (AVDD-AVSS) ref, 0x40 REFP and REFN ref, 00 internal ref 2.048V, 0x80 AIN0/REFP1 AND AIN3/REFN1 inputs, 0x40 dedicated REFP0 REFN0
   Config_Reg3 = 0x00;
   
 
   writeRegister( CONFIG_REG0_ADDRESS , Config_Reg0);
-  writeRegister_Z( CONFIG_REG0_ADDRESS , Config_Reg0);
-
   writeRegister( CONFIG_REG1_ADDRESS , Config_Reg1);
-  writeRegister_Z( CONFIG_REG1_ADDRESS , Config_Reg1);
-
   writeRegister( CONFIG_REG2_ADDRESS , Config_Reg2);
-  writeRegister_Z( CONFIG_REG2_ADDRESS , Config_Reg2_Z);
-
-  
   writeRegister( CONFIG_REG3_ADDRESS , Config_Reg3);
-  writeRegister_Z( CONFIG_REG3_ADDRESS , Config_Reg3);
 
   delay(100);
   /*
@@ -135,6 +115,7 @@ void Protocentral_ADS1220::begin()
 
 void Protocentral_ADS1220::SPI_Command(unsigned char data_in)
 {
+  
   digitalWrite(ADS1220_CS_PIN_1, LOW);
   delay(5);
   digitalWrite(ADS1220_CS_PIN_1, HIGH);
@@ -144,7 +125,7 @@ void Protocentral_ADS1220::SPI_Command(unsigned char data_in)
   SPI.transfer(data_in);
   delay(5);
   digitalWrite(ADS1220_CS_PIN_1, HIGH);
-  //////////////////////////////////
+  //////////////////////////////////  
   digitalWrite(ADS1220_CS_PIN_2, LOW);
   delay(5);
   digitalWrite(ADS1220_CS_PIN_2, HIGH);

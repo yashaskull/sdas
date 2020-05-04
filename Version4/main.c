@@ -159,15 +159,17 @@ int main()
     /////////////////
     if (GPIO_setup(fp_log) == -1)
     {
-        fprintf(fp_log, "%s: Failed to set up gpio. Please try again\n", GetLogTime());
+        fprintf(fp_log, "%s: Failed to set up gpio. Please try again\n", get_log_time());
         fclose(fp_log);
         return -1;
     }
-    printf("gpio 17: %d\n",digitalRead(17));
-    fprintf(fp_log, "%s: GPIO set up successfully\n", GetLogTime());
+    //printf("gpio 17: %d\n",digitalRead(17));
+    //fprintf(fp_log, "%s: GPIO set up successfully\n", get_log_time());
     ////////////////
-*/
-
+    if (wiringPiISR(17, INT_EDGE_BOTH, &TimeStamp) < 0)
+	{
+        printf("error\n");
+    }*/
     //////////////////////////////////////////////////////////////////////////
     /* The Ring server is the main storage of MSEED packets.
      * The DataLink (DL) protocol is used to send MSEED packets to the ringserver.
@@ -426,11 +428,13 @@ int main()
     //pthread_cond_wait(&cond1, &lock_timestamp);
     //int numsaples = 200;
     process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn);
-    //write_serial();
-   // while(!kbhit())
-    //{
-    //    usleep(1000);
-   // }
+    /**
+    write_serial();
+    printf("here\n");
+    while(!kbhit())
+    {
+        usleep(1000);
+    }*/
     /* Initiate interrupt function that timestamps */
 
 /**
@@ -546,17 +550,17 @@ int main()
     return 0;
 }
 
-/**
+
 void TimeStamp(void)
 {
     //printf("in trig ts: %d\n",digitalRead(17));
-    if(StopTimeStamp == 1)
-    {
+    //if(StopTimeStamp == 1)
+    //{
         // if fail to get timestamp, use previous timestamp
-        char date_time [27];
-        static volatile hptime_t hptime=0;
-        static volatile hptime_t *phptime = &hptime;
-        *phptime = current_utc_hptime();
+        //char date_time [27];
+        //static volatile hptime_t hptime=0;
+        //static volatile hptime_t *phptime = &hptime;
+        *hptime_p = current_utc_hptime();
 
        // hptime_t hptime_diff = hptime - global_hptime;
        // global_hptime = hptime;
@@ -572,26 +576,26 @@ void TimeStamp(void)
        //hptime_temp = hptime;
       //  printf("***************************************");
 
-        ms_hptime2isotimestr(hptime, date_time,1);
-        fprintf(fp_log, "%s: Triggered timestamp: %s\n", GetLogTime(), date_time);
-
-        //printf("%s\n", date_time);
-        int insert_timestamp_queue_rv = insert_timestamp_queue(q_timestamp, hptime, fp_log);
-        if(insert_timestamp_queue_rv == -1)
-        {
+        ms_hptime2isotimestr(hptime_start-hptime_temp, date_time,1);
+        //fprintf(fp_log, "%s: Triggered timestamp: %s\n", GetLogTime(), date_time);
+        //hptime_temp = hptime_start;
+        printf("%s\n", date_time);
+        //int insert_timestamp_queue_rv = insert_timestamp_queue(q_timestamp, hptime, fp_log);
+        //if(insert_timestamp_queue_rv == -1)
+        //{
             // What to do if fail to be placed inside of queue ?
-            fprintf(fp_log, "%s: Error inserting timestamp into queue\n", GetLogTime());
-            fflush(fp_log);
-        }
-    }else
-    {
+            //fprintf(fp_log, "%s: Error inserting timestamp into queue\n", GetLogTime());
+            //fflush(fp_log);
+       // }
+    //}else
+    //{
         // flag main program to continue
         //printf("stopping my interrupt thread\n");
-        StopTimeStampCont = 1;
-    }
+        //StopTimeStampCont = 1;
+    //}
 
 }
-*/
+
 
 void free_timestamp_buffer_samples(void)
 {
@@ -640,6 +644,7 @@ void *read_serial_buffer(void *arg)
             //printf("%s\n", serial_data);
             if (strcmp(serial_data, "*") == 0)
             {
+
                 //pthread_mutex_lock(&lock_timestamp);
                 // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records

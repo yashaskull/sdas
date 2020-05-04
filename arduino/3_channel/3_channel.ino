@@ -113,17 +113,32 @@ void setup() {
   pinMode(ADS1220_DRDY_PIN_1, INPUT);
   delay(5);
 
+  pinMode(ADS1220_CS_PIN_2, OUTPUT);
+  digitalWrite(ADS1220_CS_PIN_2, HIGH);
+  pinMode(ADS1220_DRDY_PIN_2, INPUT);
+  delay(5);
+
+  pinMode(ADS1220_CS_PIN_3, OUTPUT);
+  digitalWrite(ADS1220_CS_PIN_3, HIGH);
+  pinMode(ADS1220_DRDY_PIN_3, INPUT);
+  delay(5);
+
   // need to set pin 53 to OUTPUT for SPI communication
   pinMode(53, OUTPUT);// need to change
 
+  pinMode(22, OUTPUT);
   // count down timer and digital pin interrupt timer
   ////////////////////////////////////
   //setupTimer();
   //pinMode(interruptPin, INPUT);
   //attachInterrupt(digitalPinToInterrupt(interruptPin), printCounter, RISING);
   ////////////////////////////////////
+
+
   
   ADS1220.begin();
+    //digitalWrite(22, HIGH);
+
   //pinsInput();
   Serial.println("*");
   //setupTimer();
@@ -131,7 +146,7 @@ void setup() {
 }
 void loop()
 {
-  if (digitalRead(ADS1220_DRDY_PIN_1) == LOW)
+  if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
   {
     readData(true);
   }
@@ -139,10 +154,12 @@ void loop()
   
   if (counter == 200)
   {
-    //starttime_temp = micros();
-    //Serial.println(starttime_temp - starttime);
-    //starttime = starttime_temp;
-    
+  /**
+    if (digitalRead(22) == LOW)
+      digitalWrite(22, HIGH);
+    else
+      digitalWrite(22, LOW);*/
+      
     Serial.println("*");
     counter = 0;
   }
@@ -163,7 +180,7 @@ void readData(bool print2Serial)
   bit24_N = (bit24_N << 8) | data;
   bit24_N = (bit24_N << 8) | LSB;
 
-/**
+  
    MSB = SPI_RX_Buff_Ptr_2[0];
   data = SPI_RX_Buff_Ptr_2[1];
   LSB = SPI_RX_Buff_Ptr_2[2];
@@ -171,18 +188,20 @@ void readData(bool print2Serial)
   bit24_E = (bit24_E << 8) | data;
   bit24_E = (bit24_E << 8) | LSB;
 
-   MSB = SPI_RX_Buff_Ptr_3[0];
+  
+
+  MSB = SPI_RX_Buff_Ptr_3[0];
   data = SPI_RX_Buff_Ptr_3[1];
   LSB = SPI_RX_Buff_Ptr_3[2];
   bit24_Z = MSB;
-  bit24_Z = (bit24_N << 8) | data;
-  bit24_Z = (bit24_N << 8) | LSB;
-*/
+  bit24_Z = (bit24_Z << 8) | data;
+  bit24_Z = (bit24_Z << 8) | LSB;
+
   counter ++;
   if (print2Serial == true) 
   {
-    //Serial.println((String)bit24_N);
-   Serial.println((String)bit24_N+'*'+(String)bit24_N+'*'+(String)bit24_N);
+    //Serial.println((String)bit24_Z);
+   Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
     //printData();
@@ -221,7 +240,7 @@ void setupTimer()
 // ISR for counter down timer
 ISR(TIMER1_COMPA_vect)
 {
-  //Serial.println(counter);
+  Serial.println(counter);
   //Serial.println("*");
   counter = 0;
 }

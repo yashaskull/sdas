@@ -36,6 +36,7 @@ int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log)
 
 void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members)
 {
+
     strcpy(msrecord->msr_NS->network, msrecord_members->network);
     strcpy(msrecord->msr_EW->network, msrecord_members->network);
     strcpy(msrecord->msr_Z->network, msrecord_members->network);
@@ -179,10 +180,10 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
 
 
             ms_hptime2isotimestr(starttime_dl_server, date_time, 1);
-            printf("%s\n", date_time);
+            //printf("%s\n", date_time);
             ms_hptime2isotimestr(endtime, date_time, 1);
-            printf("%s\n", date_time);
-            printf("%d\n", packed_samples);
+            //printf("%s\n", date_time);
+            //printf("%d\n", packed_samples);
             free(sample_block_ns_temp);
             free(sample_block_ew_temp);
             free(sample_block_z_temp);

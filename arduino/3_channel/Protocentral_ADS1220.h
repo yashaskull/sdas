@@ -74,13 +74,13 @@
 */
 
 
-#define ADS1220_CS_PIN_1 49
+#define ADS1220_CS_PIN_1 44
 #define ADS1220_CS_PIN_2 46
-#define ADS1220_CS_PIN_3 44
+#define ADS1220_CS_PIN_3 42
 
-#define ADS1220_DRDY_PIN_1 48
+#define ADS1220_DRDY_PIN_1 45
 #define ADS1220_DRDY_PIN_2 47
-#define ADS1220_DRDY_PIN_3 45
+#define ADS1220_DRDY_PIN_3 43
 
 
 

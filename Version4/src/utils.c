@@ -169,13 +169,13 @@ int GPIO_setup(FILE *fp)
 
 	//pinMode(24, OUTPUT);
 	//digitalWrite(24, HIGH);
-	if (wiringPiSetup () < 0)
+	/**if (wiringPiSetup () < 0)
 	{
        // printf("fail\n");
 		fprintf(fp, "%s: Unable to setup wiringPi: %s\n",get_log_time(), strerror(errno));
 		fflush(fp);
 		return -1;
-	}
+	}*/
 	return 1;
 }
 
