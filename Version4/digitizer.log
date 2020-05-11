@@ -1,11 +1,11 @@
-Mon May  4 20:16:46 2020 : Connected to DataLink server @ localhost:16000!
-Mon May  4 20:16:46 2020 : Memory spaced allocated for MSR structure.
-Mon May  4 20:16:46 2020 : MSR initalized
-Mon May  4 20:16:46 2020 : Data buffer created and initialized
-Mon May  4 20:16:46 2020 : Timestamp queue created
-Mon May  4 20:16:46 2020 : Timestamp queue initialized!
+Sun May 10 04:31:45 2020 : Connected to DataLink server @ localhost:16000!
+Sun May 10 04:31:45 2020 : Memory spaced allocated for MSR structure.
+Sun May 10 04:31:45 2020 : MSR initalized
+Sun May 10 04:31:45 2020 : Data buffer created and initialized
+Sun May 10 04:31:45 2020 : Timestamp queue created
+Sun May 10 04:31:45 2020 : Timestamp queue initialized!
 gpio 17: 0
-Mon May  4 20:16:46 2020 : Serial port opened successfully!
-Mon May  4 20:16:46 2020 : Serial port opened and settings configured!.
-Mon May  4 20:16:49 2020 : input/output serial lines flushed!
-Mon May  4 20:16:50 2020 : Thread for reading serial created.!
+Sun May 10 04:31:45 2020 : Serial port opened successfully!
+Sun May 10 04:31:45 2020 : Serial port opened and settings configured!.
+Sun May 10 04:31:48 2020 : input/output serial lines flushed!
+Sun May 10 04:31:49 2020 : Thread for reading serial created.!

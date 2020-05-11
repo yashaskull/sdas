@@ -603,7 +603,8 @@ void free_timestamp_buffer_samples(void)
     {
     	struct timestamp_buffer_node *timestamp_buffer_node_temp = timestamp_queue->front_p;
         timestamp_queue->front_p = timestamp_queue->front_p->next_p;
-        //printf("%d\n", timestamp_buffer_node_temp->ms_record_starttime);
+        ms_hptime2isotimestr(timestamp_buffer_node_temp->ms_record_starttime, date_time, 1);
+        printf("%s\n", date_time);
         free(timestamp_buffer_node_temp);
         if(timestamp_queue->front_p == NULL)
             timestamp_queue->rear_p = NULL;
@@ -618,8 +619,8 @@ void free_data_buffer_samples(void)
     {
         struct data_buffer_node *data_buffer_node_temp = data_queue->front_p;
         data_queue->front_p = data_queue->front_p->next_p;
-        //if (data_buffer_node_temp->sample != NULL)
-            //printf("%s\n", data_buffer_node_temp->sample);
+        if (data_buffer_node_temp->sample != NULL)
+            printf("%s\n", data_buffer_node_temp->sample);
         free(data_buffer_node_temp->sample);
         free(data_buffer_node_temp);
         if(data_queue->front_p == NULL)
@@ -649,7 +650,7 @@ void *read_serial_buffer(void *arg)
                 // time stored in global variable hptime_start
                 *hptime_p = current_utc_hptime();// time for mseed records
                 //printf("%lld\n", hptime_start);
-                //ms_hptime2isotimestr(hptime_start - hptime_temp, date_time, 1);
+                ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
                 //hptime_temp = hptime_start;
                 //printf("%s\n", date_time);
                 int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
@@ -660,7 +661,7 @@ void *read_serial_buffer(void *arg)
                     fflush(fp_log);
                     exit(0);
                 }
-                pthread_cond_signal(&cond1);
+                //pthread_cond_signal(&cond1);
                 //pthread_mutex_unlock(&lock_timestamp);
             }
             //printf("%s\n", serial_data);

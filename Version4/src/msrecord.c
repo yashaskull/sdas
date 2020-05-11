@@ -105,8 +105,8 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     //////
     write_serial();
 
-    printf("Waiting on condition variable cond1\n");
-    pthread_cond_wait(cond1, lock_timestamp);
+    //printf("Waiting on condition variable cond1\n");
+    //pthread_cond_wait(cond1, lock_timestamp);
 
     while(!kbhit())
     {
@@ -118,7 +118,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             usleep(1000);
             continue;
         }
-        //ms_hptime2isotimestr(starttime, date_time, 1);
+        ms_hptime2isotimestr(starttime, date_time, 1);
         //printf("%s\n", date_time);
 
 
@@ -180,7 +180,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
 
 
             ms_hptime2isotimestr(starttime_dl_server, date_time, 1);
-            //printf("%s\n", date_time);
+            //printf("%s\n\n", date_time);
             ms_hptime2isotimestr(endtime, date_time, 1);
             //printf("%s\n", date_time);
             //printf("%d\n", packed_samples);
