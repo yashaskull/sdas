@@ -58,7 +58,7 @@ int insert_data_buffer(struct data_buffer *buffer, char *sample, FILE *fp)
         return -1;
     }
 
-    data_buffer_node_temp->sample = (char *)malloc(strlen(sample) + 1);
+    data_buffer_node_temp->sample = (char *)malloc(strlen(sample) + 5);
     strcpy(data_buffer_node_temp->sample, sample);
  	data_buffer_node_temp->next_p = NULL;
     pthread_mutex_lock(&buffer->rear_lock);
@@ -89,7 +89,7 @@ int get_data_buffer_sample(struct  data_buffer *buffer, char **sample, FILE *fp)
    		pthread_mutex_unlock(&buffer->front_lock);
     	return -1;
     }
-    *sample = (char *)malloc(strlen(data_buffer_node_temp_temp->sample)+1);
+    *sample = (char *)malloc(strlen(data_buffer_node_temp_temp->sample)+5);
     //*DataSample = malloc(strlen(TempNode->DataSample)+1);
     // failed to allocate memory to store sample. exit program
     if (sample == NULL)

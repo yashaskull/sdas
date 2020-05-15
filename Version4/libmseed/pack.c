@@ -84,21 +84,22 @@ flag packdatabyteorder   = -2;
 //msr_pack (MSRecord *msr, void (*record_handler) (char *, int, void *),
   //        void *handlerdata, int64_t *packedsamples, flag flush, flag verbose)
 //{
-/**
-int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log )
+
+int ms_record_2_dlserver(char *record, char dl_streamID[50], hptime_t dl_endtime,
+                         hptime_t dl_starttime, DLCP *dlconn, int reclen, FILE *fp_log )
 {
 
 	// check dlconn
 	// if dlconn valid, ringserver connection is valid
 	// if dlconn not valid, ringserver connection not valid. Try connecting back to ringserver
-	if ( dl_write (dlconn, record, reclen, streamID, record_starttime, record_endtime, 1) < 0 )
+	if ( dl_write (dlconn, record, reclen, dl_streamID, dl_starttime, dl_endtime, 1) < 0 )
 	{
 		//fprintf(stderr,"Error sending %s record to datalink server.\n", streamID);
-		fprintf(fp_log,"Error sending %s record to datalink server.\n", streamID);
+		fprintf(fp_log,"Error sending %s record to datalink server.\n", dl_streamID);
 		return -1;
 	}
 }
-*/
+
 // writes miniSEED packets to a file
 void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
 {
@@ -112,7 +113,8 @@ void record_handler(char *record, int reclen, void *ofp, FILE *fp_log)
   }
 }
 
-int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE *fp_log, char **record)
+int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose,
+              FILE *fp_log, char dl_streamID[50], DLCP *dlconn)
 {
 
 	//printf("Inside msr pack\n");
@@ -333,6 +335,7 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
   }
 
 ///* Add Blank 100 Blockette for storing floating point sample rates */////////
+ 	/**
  	if (!msr->Blkt100)
   {
   	//printf("blockette100\n");
@@ -348,7 +351,7 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
       free (rawrec);
       return -1;
     }
-  }
+  }*/
 ///////////////////////////////////////////////////////////////////////////////
   headerlen = msr_pack_header_raw (msr, rawrec, msr->reclen, headerswapflag, 1,
                                    &HPblkt1001, srcname, verbose);
@@ -404,6 +407,13 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
   if (packedsamples)
     *packedsamples = 0;
 
+
+    //printf("num_samples: %lld\n", msr->numsamples);
+    //printf("totalpackedsamples: %d\n", totalpackedsamples);
+    //printf("maxsamples: %d\n", maxsamples);
+
+
+
   while ((msr->numsamples - totalpackedsamples) > maxsamples || flush)
   {
 
@@ -414,7 +424,7 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
                                  &msr->ststate->lastintsample, msr->ststate->comphistory,
                                  msr->sampletype, msr->encoding, dataswapflag,
                                  srcname, verbose);
-
+   // printf("packedsamples: %d\n", packsamples);
     if (packsamples < 0)
     {
       ms_log (2, "msr_pack(%s): Error packing data samples\n", srcname);
@@ -433,33 +443,29 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
       ms_log (1, "%s: Packed %d samples\n", srcname, packsamples);
 
 
-		// CALL MSRecord2DLServer
-
-    //char date_time[27];
-    //ms_hptime2isotimestr(msr->starttime, date_time, 1);
-    //printf("Record%d starttime: %s\n", recordcnt, date_time);
-    //hptime_t record_endtime = msr_endtime(msr);
-   	//int rv = MSRecord2DLServer(rawrec, streamID, record_endtime, msr->starttime, dlconn, msr->reclen, fp_log);
-
-
-    //if (SaveFlag == 1)
-        //record_handler(rawrec, msr->reclen, fp_save, fp_log);
 
     totalpackedsamples += packsamples;
     if (packedsamples)
       *packedsamples = totalpackedsamples;
     msr->ststate->packedsamples += packsamples;
-
-    memcpy(*record, rawrec, msr->reclen);
-
+    ///////////////////////////////////////////////////////
+    // insert record into datalink server
+    // write record to file is mseed file saving is active
+    hptime_t dl_endtime = msr_endtime(msr);
+    int rv = ms_record_2_dlserver(rawrec, dl_streamID, dl_endtime, msr->starttime,
+                                  dlconn, msr->reclen, fp_log);
+    if (rv == -1)
+    {
+        printf("failed to send record\n");
+        fprintf(fp_log, "Failed to send record: %s", dl_streamID);
+        fflush(fp_log);
+    }
+    ///////////////////////////////////////////////////////
     /* Update record header for next record */
     msr->sequence_number = (msr->sequence_number >= 999999) ? 1 : msr->sequence_number + 1;
     if (msr->samprate > 0)
       msr->starttime = segstarttime + (hptime_t) (totalpackedsamples / msr->samprate * HPTMODULUS + 0.5);
 
-		//char DateTime[27];
-		//ms_hptime2isotimestr(msr->starttime, DateTime, 1);
-		//printf("Updated starttime: %s\n", DateTime);
 
     msr_update_header (msr, rawrec, headerswapflag, HPblkt1001, srcname, verbose);
 
@@ -472,15 +478,22 @@ int msr_pack (MSRecord *msr, int *packedsamples, flag flush, flag verbose, FILE 
 
     if (totalpackedsamples >= msr->numsamples)
     	break;
+
+
+   //printf("num_samples: %lld\n", msr->numsamples);
+    //printf("totalpackedsamples: %d\n", totalpackedsamples);
+    //printf("maxsamples: %d\n", maxsamples);
+
+
   } // end of while
 
   if (verbose > 2)
     ms_log (1, "%s: Packed %d total samples\n", srcname, totalpackedsamples);
 
+
   ///////////
   //////////
   free (rawrec);
-
   return recordcnt;
 } /* End of msr_pack() */
 

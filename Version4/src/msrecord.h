@@ -75,6 +75,5 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
 
 char *generate_stream_id(MSRecord *msr);
 
-int msrecord_2_dlserver(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen, FILE *fp_log);
 
 #endif // MSRECORD_H_INCLUDED
