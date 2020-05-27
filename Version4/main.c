@@ -138,6 +138,19 @@ struct msrecord_struct_members msrecord_members;
 int main()
 {
 
+    //pthread_mutex_lock(&lock_timestamp);
+    // time stored in global variable hptime_start
+    *hptime_p = current_utc_hptime();// time for mseed records
+    printf("%lld\n", hptime_start);
+    ms_hptime2isotimestr(hptime_start, date_time, 1);
+    printf("%s\n", date_time);
+
+    int year, month, day, hour;
+    sscanf(date_time, "%d-%d-%dT%d:", &year, &month, &day, &hour);
+    printf("%d\n", hour);
+    //hptime_temp = hptime_start;
+
+    return 0;
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {

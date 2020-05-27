@@ -95,12 +95,12 @@ void setup() {
 
   Serial.begin(115200);
 
-  
+  /**
   while (!Serial.available())
   {
     delay(1000);
-    // do nothing
-  }
+     //do nothing
+  }*/
 
   while(Serial.available())
   {
@@ -147,7 +147,7 @@ void setup() {
 }
 void loop()
 {
-  if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
+  if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW  && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
   {
     readData(true);
   }
@@ -202,14 +202,14 @@ void readData(bool print2Serial)
   if (print2Serial == true) 
   {
     //Serial.println(bit24_N);
-    /**
+    
     Serial.print(bit24_N);
     Serial.print(" ");
-    Serial.print(bit24_E);
+    Serial.print(bit24_E );
     Serial.print(" ");
-    Serial.println(bit24_Z);*/
+    Serial.println(bit24_Z);
     //Serial.println((String)bit24_Z);
-   Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
+   //Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
   //Serial.println("1000*1000*1000");
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
