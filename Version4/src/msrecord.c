@@ -110,9 +110,14 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     //printf("Waiting on condition variable cond1\n");
     //pthread_cond_wait(cond1, lock_timestamp);
 
+    // variable which is part of saving mseed files. Add if statement
+    // if (save2mseed file == 1);
+    //      create variable
+    hptime_t timestamp_begin = 0;
     while(!kbhit())
     {
-          // get timestamp
+
+        // get timestamp
         starttime = get_starttime(ts_queue);
         if (starttime == 0)
         {
@@ -161,6 +166,8 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             msrecord->msr_EW->datasamples = sample_block_ew_temp;
             msrecord->msr_Z->datasamples = sample_block_z_temp;
 
+            if (timestamp_begin == 0)
+                timestamp_begin = msrecord->msr_NS->starttime;
             // any record can be used to get the starttime since they all have the same starttime
             //hptime_t starttime_dl_server = msrecord->msr_NS->starttime;
 
@@ -320,7 +327,6 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
 }
 
 
-
 char *generate_stream_id(MSRecord *msr)
 {
     static char stream_id[50];
@@ -333,4 +339,23 @@ char *generate_stream_id(MSRecord *msr)
     //return stream_id;
     return stream_id;
 
+}
+
+void (hptime_t time_start, int *time_check)
+{
+    char date_time[27];
+    ms_hptime2isotimestr(time_start, date_time, 1);
+
+    int year_start, month_start, day_start, hour_start;
+    sscanf(date_time, "%d-%d-%dT%d:", &year, &month, &day, &hour);
+
+    if (time_check == 0) // first start time
+    {
+        *time_check = hour;
+        return ;
+    }
+    if (hour != time_check)
+    {
+        // trigger save
+    }
 }
