@@ -138,7 +138,8 @@ struct msrecord_struct_members msrecord_members;
 int main()
 {
 
-
+    system("ls");
+    return -1;
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {

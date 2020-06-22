@@ -29,6 +29,15 @@
 static flag verbose = 1;
 flag overwrite;
 
+struct datetime
+{
+    int year;
+    int month;
+    int day;
+    int hour;
+    int mins;
+    int sec;
+};
 struct msrecord_struct
 {
     MSRecord *msr_NS;
@@ -75,5 +84,6 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
 
 char *generate_stream_id(MSRecord *msr);
 
+int extract_hour(hptime_t hptime);
 
 #endif // MSRECORD_H_INCLUDED

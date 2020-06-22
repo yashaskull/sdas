@@ -105,18 +105,23 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     //////
     fprintf(fp_log, "%s: Beginning acquisition system!", get_log_time());
     fflush(fp_log);
+
+    // variable which is part of saving mseed files. Add if statement
+    // if (save2mseed file == 1);
+    // create variable
+    int first_timestamp_check = 0;
+    struct datetime starttime_save;
+    struct datetime endtime_save;
+
+    // begin
     write_serial();
 
     //printf("Waiting on condition variable cond1\n");
     //pthread_cond_wait(cond1, lock_timestamp);
 
-    // variable which is part of saving mseed files. Add if statement
-    // if (save2mseed file == 1);
-    //      create variable
-    hptime_t timestamp_begin = 0;
+
     while(!kbhit())
     {
-
         // get timestamp
         starttime = get_starttime(ts_queue);
         if (starttime == 0)
@@ -127,7 +132,13 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
         }
         //ms_hptime2isotimestr(starttime, date_time, 1);
         //printf("%s\n", date_time);
-
+        // set initial timestamp to begin saving with
+        // since we are saving every hour, get the initial hour
+        if (first_timestamp_check == 0)
+        {
+            extract_datetime(starttime, &starttime_save);
+            first_timestamp_check = 1;
+        }
 
         if(endtime != 0)
         {
@@ -166,8 +177,8 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             msrecord->msr_EW->datasamples = sample_block_ew_temp;
             msrecord->msr_Z->datasamples = sample_block_z_temp;
 
-            if (timestamp_begin == 0)
-                timestamp_begin = msrecord->msr_NS->starttime;
+            // temp variable to store starttime of each packet about to be created
+            hptime_t starttime_temp = msrecord->msr_NS->starttime;
             // any record can be used to get the starttime since they all have the same starttime
             //hptime_t starttime_dl_server = msrecord->msr_NS->starttime;
 
@@ -196,6 +207,23 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = msrecord_members->numsamples;
             msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = msrecord_members->numsamples;
             data_sample_counter = 0;
+
+            // run save check
+            if (save_check)
+            {
+                extract_datetime(starttime_temp, &endtime_save);
+                // run save routine
+                if (endtime_save.hour != starttime_save.hour)
+                {
+
+                }
+            }
+           // if (hour_change != save_hour_begin)
+           // {
+                // run save
+                // update save_hour_begin
+                // update save_timestamp_begin
+            //}
         }
 
         msrecord->msr_NS->starttime = starttime;
@@ -341,6 +369,23 @@ char *generate_stream_id(MSRecord *msr)
 
 }
 
+
+void extract_datetime(hptime_t hptime, struct datetime *dt)
+{
+    char date_time[27];
+    ms_hptime2isotimestr(hptime, date_time,0)
+    int year, month, day, hour, mins, sec;
+
+    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec)
+    dt->year = year;
+    dt->month = month;
+    dt->day = day;
+    dt->hour = hour;
+    dt->mins = mins;
+    dt->sec = sec;
+}
+
+/**
 void (hptime_t time_start, int *time_check)
 {
     char date_time[27];
@@ -358,4 +403,4 @@ void (hptime_t time_start, int *time_check)
     {
         // trigger save
     }
-}
+}*/

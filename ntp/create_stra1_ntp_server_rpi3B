@@ -34,9 +34,9 @@ Procedure:
 	$ sudo nano /boot/config.txt
 	
 	Add the following lines at the end of config.txt
-	dtoverlay=pps,gpiopin=18
+	dtoverlay=pps-gpio,gpiopin=18
 	enable_uart=1
-	core_freq-250
+	core_freq=250
 	
 	Exit and save
 	
