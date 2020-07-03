@@ -64,7 +64,7 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
 }
 int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn)
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check)
 {
     int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members->numsamples);
     int32_t *sample_block_ew = malloc(sizeof(int32_t) * msrecord_members->numsamples);
@@ -97,7 +97,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
 
     hptime_t starttime = 0;
     hptime_t endtime = 0;
-    hptime_t hptime_diff;
+    //hptime_t hptime_diff;
 
     //float sample_period = 1/200.0;
     hptime_t hptime_sample_period = ms_time2hptime(1970, 01, 00, 00, 00, 5000);
@@ -109,7 +109,6 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     // variable which is part of saving mseed files. Add if statement
     // if (save2mseed file == 1);
     // create variable
-    int first_timestamp_check = 0;
     struct datetime starttime_save;
     struct datetime endtime_save;
 
@@ -134,10 +133,9 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
         //printf("%s\n", date_time);
         // set initial timestamp to begin saving with
         // since we are saving every hour, get the initial hour
-        if (first_timestamp_check == 0)
+        if (endtime == 0)
         {
             extract_datetime(starttime, &starttime_save);
-            first_timestamp_check = 1;
         }
 
         if(endtime != 0)
@@ -213,17 +211,27 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             {
                 extract_datetime(starttime_temp, &endtime_save);
                 // run save routine
-                if (endtime_save.hour != starttime_save.hour)
+                if (starttime_save.mins != endtime_save.mins)
                 {
+                    printf("Running save routine\n");
 
+                    printf("time windows\n\n");
+                    printf("%d %d %d %d %d %d\n", starttime_save.year, starttime_save.month, starttime_save.day,
+                                                starttime_save.hour, starttime_save.mins, starttime_save.sec);
+
+                    printf("%d %d %d %d %d %d\n", endtime_save.year, endtime_save.month, endtime_save.day,
+                                                endtime_save.hour, endtime_save.mins, endtime_save.sec);
+
+
+                    // set starttime_save = endtime_save
+                    starttime_save.year = endtime_save.year;
+                    starttime_save.month = endtime_save.month;
+                    starttime_save.day = endtime_save.day;
+                    starttime_save.hour = endtime_save.hour;
+                    starttime_save.mins = endtime_save.mins;
+                    starttime_save.sec = endtime_save.sec+1;
                 }
             }
-           // if (hour_change != save_hour_begin)
-           // {
-                // run save
-                // update save_hour_begin
-                // update save_timestamp_begin
-            //}
         }
 
         msrecord->msr_NS->starttime = starttime;
@@ -373,10 +381,10 @@ char *generate_stream_id(MSRecord *msr)
 void extract_datetime(hptime_t hptime, struct datetime *dt)
 {
     char date_time[27];
-    ms_hptime2isotimestr(hptime, date_time,0)
+    ms_hptime2isotimestr(hptime, date_time,0);
     int year, month, day, hour, mins, sec;
 
-    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec)
+    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec);
     dt->year = year;
     dt->month = month;
     dt->day = day;
@@ -384,23 +392,3 @@ void extract_datetime(hptime_t hptime, struct datetime *dt)
     dt->mins = mins;
     dt->sec = sec;
 }
-
-/**
-void (hptime_t time_start, int *time_check)
-{
-    char date_time[27];
-    ms_hptime2isotimestr(time_start, date_time, 1);
-
-    int year_start, month_start, day_start, hour_start;
-    sscanf(date_time, "%d-%d-%dT%d:", &year, &month, &day, &hour);
-
-    if (time_check == 0) // first start time
-    {
-        *time_check = hour;
-        return ;
-    }
-    if (hour != time_check)
-    {
-        // trigger save
-    }
-}*/

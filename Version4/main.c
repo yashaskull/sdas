@@ -137,9 +137,16 @@ struct msrecord_struct_members msrecord_members;
 /* Main Program */
 int main()
 {
+    *hptime_p = current_utc_hptime();// time for mseed records
+    ms_hptime2isotimestr(hptime_start, date_time, 1);
+    printf("%s\n", date_time);
+    int year, month, day, hour, mins, sec;
+    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec);
+    printf("%d\n", month);
+    printf("%d\n", sec);
 
-    system("ls");
-    return -1;
+    return 1;
+    // open log file
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {
@@ -156,23 +163,7 @@ int main()
         return -1;
     }
     msrecord_members.numsamples = 200;
-    /**
-        // GPIO setup
-        /////////////////
-        if (GPIO_setup(fp_log) == -1)
-        {
-            fprintf(fp_log, "%s: Failed to set up gpio. Please try again\n", get_log_time());
-            fclose(fp_log);
-            return -1;
-        }
-        //printf("gpio 17: %d\n",digitalRead(17));
-        //fprintf(fp_log, "%s: GPIO set up successfully\n", get_log_time());
-        ////////////////
-        if (wiringPiISR(17, INT_EDGE_BOTH, &TimeStamp) < 0)
-    	{
-            printf("error\n");
-        }*/
-    //////////////////////////////////////////////////////////////////////////
+
     /* The Ring server is the main storage of MSEED packets.
      * The DataLink (DL) protocol is used to send MSEED packets to the ringserver.
      * As a first entry point into the program, a connection is established to the DL server.
@@ -190,8 +181,7 @@ int main()
     }
     fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", get_log_time());
 
-    /** mseed record structure initialization
-    */
+    // mseed record structure initialization
     if (msrecord_struct_init(&msrecord, fp_log) == -1)
     {
         fprintf(fp_log, "%s: One or more ms record structures failed to initialize.\n", get_log_time());
@@ -217,62 +207,7 @@ int main()
     temp = generate_stream_id(msrecord.msr_Z);
     strcpy(msrecord.stream_id_z, temp);
 
-//////////////////////////////////////////////////////////////////////////////////////
-    /**
-    *hptime_p = current_utc_hptime();// time for mseed records
-    //printf("%lld\n", hptime_start);
-    ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
-    //hptime_temp = hptime_start;
-    printf("%s\n", date_time);
-
-    msrecord.msr_NS->starttime = hptime_start;
-    int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members.numsamples);
-    for (int i = 0; i < 200; i ++)
-        sample_block_ns[i] = 4973996;
-
-    int packed_samples;
-    char *record = (char *)malloc(msrecord_members.reclen);
-    msrecord.msr_NS->datasamples = sample_block_ns;
-    int packed_records = msr_pack(msrecord.msr_NS, &packed_samples, 1, verbose -1, fp_log, &record);
-
-    printf("%d\n", packed_samples);
-    MSRecord *msr1 = 0;
-    int rv_1 = msr_unpack (record, 512, &msr1, 2, 0);
-    printf("aaaaaaaaa: %lld", msr1->numsamples);
-    msr_print (msr1, 1);
-    exit(0);*/
-    /////////////////////////////////////////////////////////////////////////////////////
-    /**
-        // if save2mseedfile is one, create save folders in usb drive if mounted
-        if (Save2MseedFile == 1)
-        {
-            if (SaveFolderConfig(CheckMount, MountCommand, MseedVolume, SaveFolderUSBE, SaveFolderUSBN, SaveFolderUSBZ, fp_log) == -1)
-            {
-                fprintf(fp_log, "%s: Error setting up save folders. Restart program.\n", GetLogTime());
-                msr_NS->datasamples = NULL;
-                msr_free(&msr_NS);
-
-                msr_EW->datasamples = NULL;
-                msr_free(&msr_EW);
-
-                msr_Z->datasamples = NULL;
-                msr_free(&msr_Z);
-
-                if ( dlconn->link != -1 )
-                    dl_disconnect (dlconn);
-
-                if ( dlconn )
-                    dl_freedlcp (dlconn);
-
-                fclose(fp_log);
-                return -1;
-            }
-        }
-    */
-
-    // data buffer is a queue type implementation
-    // Queue to store samples received from Arduino over serial
-    // Create and initialize
+    // create data buffer
     if(!(data_queue = create_data_buffer(data_queue, fp_log)))
     {
         fprintf(fp_log, "%s: Could not allocate data buffer, out of memory? \n", get_log_time());
@@ -282,7 +217,7 @@ int main()
 
         return -1;
     }
-    /* Initialize timestamp queue */
+    // initialize data buffer
     if(initialize_data_buffer(data_queue, fp_log) == -1)
     {
         fprintf(fp_log, "%s: Error in initializing data buffer. Try again.\n", get_log_time());
@@ -455,102 +390,10 @@ int main()
     //write_serial();
     //pthread_cond_wait(&cond1, &lock_timestamp);
     //int numsaples = 200;
-    process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn);
-    /**
-    write_serial();
-    printf("here\n");
-    while(!kbhit())
-    {
-        usleep(1000);
-    }*/
-    /* Initiate interrupt function that timestamps */
+    process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn,
+                 save_mseed_file);
 
-    /**
-        sleep(1);
-
-    	if (wiringPiISR(17, INT_EDGE_BOTH, &TimeStamp) < 0)
-    	{
-            fprintf(fp_log, "%s: Error initializing interrupt function.", GetLogTime());
-    		timestamp_queue_free();
-            // de-allocate timestamp queue
-            queue_timestamp_free(&q_timestamp);
-            FreeDataQueueSamples();
-            DataQueueFree(&qDataSample);
-
-    		// Free msr struct
-            msr_NS->datasamples = NULL;
-            msr_free(&msr_NS);
-
-            msr_EW->datasamples = NULL;
-            msr_free(&msr_EW);
-
-            msr_Z->datasamples = NULL;
-            msr_free(&msr_Z);
-            // Free DL descriptor and disconnect
-            if ( dlconn->link != -1 )
-                dl_disconnect (dlconn);
-
-            if ( dlconn )
-                dl_freedlcp (dlconn);
-
-            close_serial();
-            fclose(fp_log);
-    		return -1;
-    	}
-
-        fprintf(fp_log, "%s: after interrupt setup: %d\n",GetLogTime(), digitalRead(17));
-
-    	fprintf(fp_log, "%s: WiringPi set up successfully!\n", GetLogTime());
-        /* Flush input and output lines of the serial */
-
-    /**  Digitizer(CheckMount, fp_log, q_timestamp, qDataSample, msr_NS, msr_EW, msr_Z, BLOCK_LENGTH_100,
-               Save2MseedFile, Save2MseedFile_temp, SaveFolderUSBE, SaveFolderUSBN, SaveFolderUSBZ,
-                StreamIDE, StreamIDN, StreamIDZ, reclen, dlconn, &tag);
-
-      fprintf(fp_log, "%s: CreateMSRecord returning\n", GetLogTime());
-
-      StopHandleMseedRecord = 0;
-
-      //digitalWrite(17, LOW);
-
-      // comment out if not time stamping every sec. if timestamping every sec then leave
-      //StopTimeStamp = 0;
-      //while(StopTimeStampCont != 1)
-          //continue;
-
-      // Program shutdown
-      // FREE all allocated memory.
-      timestamp_queue_free();
-      queue_timestamp_free(&q_timestamp);
-      FreeDataQueueSamples();
-      DataQueueFree(&qDataSample);
-
-      msr_NS->datasamples = NULL;
-
-      msr_free(&msr_NS);
-
-      msr_EW->datasamples = NULL;
-      msr_free(&msr_EW);
-
-      msr_Z->datasamples = NULL;
-      msr_free(&msr_Z);
-
-      flush_serial();
-      close_serial();
-      if ( dlconn->link != -1 )
-          dl_disconnect (dlconn);
-
-      if ( dlconn )
-          dl_freedlcp (dlconn);
-
-      pthread_detach(CreateMSEEDRecordThreadID);
-      fprintf(fp_log, "%s: Program exiting.\n", GetLogTime());
-
-
-      if (fp_log != NULL)
-          fclose(fp_log);
-
-    */
+    // returned after process data finishes
     stop_read_serial_buffer_thread = 0;
     sleep(1);
     pthread_mutex_destroy(&lock_timestamp);
@@ -862,7 +705,7 @@ int parse_config_file()
         fprintf(fp_log, "%s: save2mseedfile not found\n", get_log_time());
         return -1;
     }
-    save_mseed_file_temp = save_mseed_file;
+    //save_mseed_file_temp = save_mseed_file;
     config_destroy(cf);
 
     return 1;
