@@ -29,14 +29,15 @@
 static flag verbose = 1;
 flag overwrite;
 
+
 struct datetime
 {
-    int year;
-    int month;
-    int day;
-    int hour;
-    int mins;
-    int sec;
+    char year[5];
+    char month[3];
+    char day[3];
+    char hour[3];
+    char mins[3];
+    char sec[3];
 };
 struct msrecord_struct
 {
@@ -73,7 +74,8 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
 
 int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check);
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check,
+                 char *save_dir);
 
 //void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
   //             int BlockLength, int Save2MseedFile, int Save2MseedFile_temp, char *SaveFolderUSBE, char *SaveFolderUSBN, char *SaveFolderUSBZ,
@@ -85,5 +87,7 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
 char *generate_stream_id(MSRecord *msr);
 
 void extract_datetime(hptime_t hptime, struct datetime *dt);
+
+int get_length_datetime_params();
 
 #endif // MSRECORD_H_INCLUDED

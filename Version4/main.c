@@ -83,7 +83,7 @@ int StopTimeStampCont = 0;
 
 
 // usb drive location to store mseed files
-char mseed_volume[15];
+char data_save_location[30];
 
 // flag used to create and store mseed files. 1 = create, 0 = don't create
 int save_mseed_file;
@@ -91,8 +91,8 @@ int save_mseed_file_temp;
 
 FILE *fp_log;
 // usb mount command
-char *MountCommand = "mount | grep -q ";
-char CheckMount[70];
+char *mount_command = "mount | grep -q ";
+char check_mount[70];
 
 // log file definition
 // datalink connection definition
@@ -137,15 +137,6 @@ struct msrecord_struct_members msrecord_members;
 /* Main Program */
 int main()
 {
-    *hptime_p = current_utc_hptime();// time for mseed records
-    ms_hptime2isotimestr(hptime_start, date_time, 1);
-    printf("%s\n", date_time);
-    int year, month, day, hour, mins, sec;
-    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec);
-    printf("%d\n", month);
-    printf("%d\n", sec);
-
-    return 1;
     // open log file
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
@@ -390,8 +381,21 @@ int main()
     //write_serial();
     //pthread_cond_wait(&cond1, &lock_timestamp);
     //int numsaples = 200;
+
+    // add a check if save location is mounted
+    // if not, set save check to 0
+
+    strcpy(check_mount, mount_command);
+    strcat(check_mount, data_save_location);
+    // drive not mounted
+    if (save_mseed_file == 1 && system(check_mount) != 0)
+    {
+        fprintf(fp_log, "%s: Location for saving mseed files at %s is not mounted. Data will only be stored in ring buffer. Please check if save location is mounted correctly for data to be stored in mseed files\n", get_log_time(), data_save_location);
+        save_mseed_file = 0;
+    }
+    // beging acuqisition system
     process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn,
-                 save_mseed_file);
+                 save_mseed_file, data_save_location);
 
     // returned after process data finishes
     stop_read_serial_buffer_thread = 0;
@@ -689,8 +693,8 @@ int parse_config_file()
     //printf("%s %s %s\n", ChannelNameEW, ChannelNameNS, ChannelNameZ);
 
     // usb save location
-    if (config_lookup_string(cf, "usblocation", &temp))
-        strcpy(mseed_volume, temp);
+    if (config_lookup_string(cf, "datasavelocation", &temp))
+        strcpy(data_save_location, temp);
     else
     {
         fprintf(fp_log, "%s: usblocation not found\n", get_log_time());

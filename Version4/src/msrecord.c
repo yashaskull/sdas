@@ -64,8 +64,10 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
 }
 int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check)
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check,
+                 char *save_dir)
 {
+    // arrays to store data
     int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members->numsamples);
     int32_t *sample_block_ew = malloc(sizeof(int32_t) * msrecord_members->numsamples);
     int32_t *sample_block_z = malloc(sizeof(int32_t) * msrecord_members->numsamples);
@@ -76,10 +78,15 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
         return -1;
     }
 
+    // data samples returned from data buffer.
+    // contains data for each channel
     char *data_sample;
     int get_data_buffer_sample_rv;
+    // counter to keep track of data samples returned from buffer
     int data_sample_counter = 0;
+    // token string for separating each channel data from data_sample
     char data_sample_token[NUM_CHANNELS][MAX_CHANNEL_LENGTH];
+    // pointer to data_sample_token
     char *sample_ptr;
     int sample_ptr_counter;
 
@@ -88,12 +95,6 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     ///////////////////////
     int packed_samples;
     int packed_records;
-    //char *record = (char *)malloc(msrecord_members->reclen);
-    //if (record == NULL)
-    //{
-      //  printf("Error allocating memory for record\n");
-       // return -1;
-    //}
 
     hptime_t starttime = 0;
     hptime_t endtime = 0;
@@ -103,21 +104,34 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     hptime_t hptime_sample_period = ms_time2hptime(1970, 01, 00, 00, 00, 5000);
     ///////////////////////
     //////
+
+    /**
+    * Variables associated with saving data to mseed files
+    */
+    // Begin time of time window for saving packets
+    struct datetime starttime_save;
+    // End time of time window for saving packets
+    struct datetime endtime_save;
+    // The following variables represent the save command initiated by the OS.
+    // It uses slarchive and a time window (begin:end)
+    char *save_command = "~/Desktop/slarchive/./slarchive -tw ";
+    char *save_option = " -CSS ";
+    char *sl_host_port = " localhost:18000 ";
+    int length_datetime_pararms = get_length_datetime_params();
+    printf("asd: %d\n", length_datetime_pararms);
+    exit(0);
+    int save_command_length = strlen(save_command) + strlen(save_option) + strlen(sl_host_port)+
+                              strlen(save_dir);
+
+    // Begin Acquisition System
     fprintf(fp_log, "%s: Beginning acquisition system!", get_log_time());
     fflush(fp_log);
 
-    // variable which is part of saving mseed files. Add if statement
-    // if (save2mseed file == 1);
-    // create variable
-    struct datetime starttime_save;
-    struct datetime endtime_save;
-
-    // begin
+    // Send start command
     write_serial();
 
     //printf("Waiting on condition variable cond1\n");
     //pthread_cond_wait(cond1, lock_timestamp);
-
 
     while(!kbhit())
     {
@@ -133,7 +147,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
         //printf("%s\n", date_time);
         // set initial timestamp to begin saving with
         // since we are saving every hour, get the initial hour
-        if (endtime == 0)
+        if (endtime == 0 && save_check)
         {
             extract_datetime(starttime, &starttime_save);
         }
@@ -211,25 +225,29 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             {
                 extract_datetime(starttime_temp, &endtime_save);
                 // run save routine
-                if (starttime_save.mins != endtime_save.mins)
+                if (atoi(starttime_save.mins) != atoi(endtime_save.mins))
                 {
                     printf("Running save routine\n");
 
+
                     printf("time windows\n\n");
-                    printf("%d %d %d %d %d %d\n", starttime_save.year, starttime_save.month, starttime_save.day,
+                    printf("%s %s %s %s %s %s\n", starttime_save.year, starttime_save.month, starttime_save.day,
                                                 starttime_save.hour, starttime_save.mins, starttime_save.sec);
 
-                    printf("%d %d %d %d %d %d\n", endtime_save.year, endtime_save.month, endtime_save.day,
+                    printf("%s %s %s %s %s %s\n", endtime_save.year, endtime_save.month, endtime_save.day,
                                                 endtime_save.hour, endtime_save.mins, endtime_save.sec);
 
 
+                    //printf("%s\n", save_location);
                     // set starttime_save = endtime_save
-                    starttime_save.year = endtime_save.year;
-                    starttime_save.month = endtime_save.month;
-                    starttime_save.day = endtime_save.day;
-                    starttime_save.hour = endtime_save.hour;
-                    starttime_save.mins = endtime_save.mins;
-                    starttime_save.sec = endtime_save.sec+1;
+                    strcpy(starttime_save.year, endtime_save.year);
+                    strcpy(starttime_save.month, endtime_save.month);
+                    strcpy(starttime_save.day, endtime_save.day);
+                    strcpy(starttime_save.hour, endtime_save.hour);
+                    strcpy(starttime_save.mins, endtime_save.mins);
+                    int temp_sec = atoi(endtime_save.sec) + 1;
+                    sprintf(starttime_save.sec, "%d", temp_sec);
+                    //strcpy(starttime_save.sec, (char)(atoi(endtime_save.sec) + 1));
                 }
             }
         }
@@ -382,13 +400,17 @@ void extract_datetime(hptime_t hptime, struct datetime *dt)
 {
     char date_time[27];
     ms_hptime2isotimestr(hptime, date_time,0);
-    int year, month, day, hour, mins, sec;
+    sscanf(date_time, "%4s-%2s-%2sT%2s:%2s:%2s", dt->year, dt->month, dt->day, dt->hour, dt->mins, dt->sec);
+}
 
-    sscanf(date_time, "%d-%d-%dT%d:%d:%d", &year, &month, &day, &hour, &mins, &sec);
-    dt->year = year;
-    dt->month = month;
-    dt->day = day;
-    dt->hour = hour;
-    dt->mins = mins;
-    dt->sec = sec;
+
+
+int get_length_datetime_params()
+{
+    struct datetime temp;
+    printf("%d\n", strlen(temp.day));
+    int length = strlen(temp.day) + strlen(temp.year) + strlen(temp.month) + strlen(temp.hour) +
+                 strlen(temp.mins) + strlen(temp.sec);
+
+    return length;
 }

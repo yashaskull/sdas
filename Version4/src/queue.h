@@ -10,6 +10,11 @@
 #include "libmseed.h"
 #include "ezxml.h"
 
+
+struct file_save_parameters
+{
+
+};
 /* External Buffer. Queue type implementation */
 // Node inside external buffer which stores data sample.
 // node in data queue
