@@ -114,14 +114,11 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     struct datetime endtime_save;
     // The following variables represent the save command initiated by the OS.
     // It uses slarchive and a time window (begin:end)
-    char *save_command = "~/Desktop/slarchive/./slarchive -tw ";
+    char *slarchive_command = "~/Desktop/slarchive-2.2/./slarchive -tw ";
     char *save_option = " -CSS ";
     char *sl_host_port = " localhost:18000 ";
-    int length_datetime_pararms = get_length_datetime_params();
-    printf("asd: %d\n", length_datetime_pararms);
-    exit(0);
-    int save_command_length = strlen(save_command) + strlen(save_option) + strlen(sl_host_port)+
-                              strlen(save_dir);
+    int save_command_length = strlen(slarchive_command) + strlen(save_option) + strlen(sl_host_port) + strlen(save_dir) + 50;
+    char save_command[save_command_length];
 
     // Begin Acquisition System
     fprintf(fp_log, "%s: Beginning acquisition system!", get_log_time());
@@ -237,7 +234,37 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
                     printf("%s %s %s %s %s %s\n", endtime_save.year, endtime_save.month, endtime_save.day,
                                                 endtime_save.hour, endtime_save.mins, endtime_save.sec);
 
+                    strcpy(save_command, slarchive_command);
+                    strcat(save_command, starttime_save.year);
+                    strcat(save_command, ",");
+                    strcat(save_command, starttime_save.month);
+                    strcat(save_command, ",");
+                    strcat(save_command, starttime_save.day);
+                    strcat(save_command, ",");
+                    strcat(save_command, starttime_save.hour);
+                    strcat(save_command, ",");
+                    strcat(save_command, starttime_save.mins);
+                    strcat(save_command, ",");
+                    strcat(save_command, starttime_save.sec);
+                    strcat(save_command, ":");
+                    strcat(save_command, endtime_save.year);
+                    strcat(save_command, ",");
+                    strcat(save_command, endtime_save.month);
+                    strcat(save_command, ",");
+                    strcat(save_command, endtime_save.day);
+                    strcat(save_command, ",");
+                    strcat(save_command, endtime_save.hour);
+                    strcat(save_command, ",");
+                    strcat(save_command, endtime_save.mins);
+                    strcat(save_command, ",");
+                    strcat(save_command, endtime_save.sec);
 
+                    strcat(save_command, save_option);
+                    strcat(save_command, save_dir);
+                    strcat(save_command, sl_host_port);
+                    strcat(save_command, "&");
+                    system(save_command);
+                    //printf("%s\n", save_command);
                     //printf("%s\n", save_location);
                     // set starttime_save = endtime_save
                     strcpy(starttime_save.year, endtime_save.year);
@@ -401,16 +428,4 @@ void extract_datetime(hptime_t hptime, struct datetime *dt)
     char date_time[27];
     ms_hptime2isotimestr(hptime, date_time,0);
     sscanf(date_time, "%4s-%2s-%2sT%2s:%2s:%2s", dt->year, dt->month, dt->day, dt->hour, dt->mins, dt->sec);
-}
-
-
-
-int get_length_datetime_params()
-{
-    struct datetime temp;
-    printf("%d\n", strlen(temp.day));
-    int length = strlen(temp.day) + strlen(temp.year) + strlen(temp.month) + strlen(temp.hour) +
-                 strlen(temp.mins) + strlen(temp.sec);
-
-    return length;
 }

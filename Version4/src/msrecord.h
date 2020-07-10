@@ -88,6 +88,4 @@ char *generate_stream_id(MSRecord *msr);
 
 void extract_datetime(hptime_t hptime, struct datetime *dt);
 
-int get_length_datetime_params();
-
 #endif // MSRECORD_H_INCLUDED
