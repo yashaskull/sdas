@@ -95,12 +95,17 @@ void setup() {
 
   Serial.begin(115200);
 
-  
+  /**
   while (!Serial.available())
   {
     delay(1000);
+<<<<<<< HEAD
      //do nothing
   }
+=======
+    // do nothing
+  }*/
+>>>>>>> master
 
   while(Serial.available())
   {
@@ -201,7 +206,12 @@ void readData(bool print2Serial)
   counter ++;
   if (print2Serial == true) 
   {
-    //Serial.println(bit24_N);
+ //   if (bit24_N >= 8388608 && bit24_N <= 16777215)
+  //  {
+    //  Serial.println((16777215 - bit24_N)*-1);
+  //  }
+   // else
+      Serial.println(bit24_N);
     /**
     Serial.print(bit24_N);
     Serial.print(" ");
@@ -209,7 +219,7 @@ void readData(bool print2Serial)
     Serial.print(" ");
     Serial.println(bit24_Z);*/
     //Serial.println((String)bit24_Z);
-   Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
+   //Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
   //Serial.println("1000*1000*1000");
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_E);
