@@ -121,7 +121,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     char save_command[save_command_length];
 
     // Begin Acquisition System
-    fprintf(fp_log, "%s: Beginning acquisition system!", get_log_time());
+    fprintf(fp_log, "%s: Beginning acquisition system!\n", get_log_time());
     fflush(fp_log);
 
     // Send start command
@@ -222,17 +222,14 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             {
                 extract_datetime(starttime_temp, &endtime_save);
                 // run save routine
-                if (atoi(starttime_save.mins) != atoi(endtime_save.mins))
+                if (atoi(starttime_save.hour) != atoi(endtime_save.hour))
                 {
-                    printf("Running save routine\n");
+                    fprintf(fp_log, "%s: Save routine time window: %s,%s,%s,%s,%s,%s:%s,%s,%s,%s,%s,%s\n", get_log_time(),
+                            starttime_save.year, starttime_save.month, starttime_save.day, starttime_save.hour,
+                            starttime_save.mins, starttime_save.sec, endtime_save.year, endtime_save.month,
+                            endtime_save.day, endtime_save.hour, endtime_save.mins, endtime_save.sec);
 
-
-                    printf("time windows\n\n");
-                    printf("%s %s %s %s %s %s\n", starttime_save.year, starttime_save.month, starttime_save.day,
-                                                starttime_save.hour, starttime_save.mins, starttime_save.sec);
-
-                    printf("%s %s %s %s %s %s\n", endtime_save.year, endtime_save.month, endtime_save.day,
-                                                endtime_save.hour, endtime_save.mins, endtime_save.sec);
+                    fflush(fp_log);
 
                     strcpy(save_command, slarchive_command);
                     strcat(save_command, starttime_save.year);

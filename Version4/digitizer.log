@@ -1,12 +1,19 @@
-Fri Jul 10 21:02:45 2020 : Connected to DataLink server @ localhost:16000!
-Fri Jul 10 21:02:45 2020 : Memory spaced allocated for MSR structure.
-Fri Jul 10 21:02:45 2020 : MSR initalized
-Fri Jul 10 21:02:45 2020 : Data buffer created and initialized
-Fri Jul 10 21:02:45 2020 : Timestamp queue created
-Fri Jul 10 21:02:45 2020 : Timestamp queue initialized!
+Tue Jul 14 14:55:05 2020 : Connected to DataLink server @ localhost:16000!
+Tue Jul 14 14:55:05 2020 : Memory spaced allocated for MSR structure.
+Tue Jul 14 14:55:05 2020 : MSR initalized
+Tue Jul 14 14:55:05 2020 : Data buffer created and initialized
+Tue Jul 14 14:55:05 2020 : Timestamp queue created
+Tue Jul 14 14:55:05 2020 : Timestamp queue initialized!
 gpio 17: 0
-Fri Jul 10 21:02:45 2020 : Serial port opened successfully!
-Fri Jul 10 21:02:45 2020 : Serial port opened and settings configured!.
-Fri Jul 10 21:02:48 2020 : input/output serial lines flushed!
-Fri Jul 10 21:02:49 2020 : Thread for reading serial created.!
-Fri Jul 10 21:02:49 2020 : Beginning acquisition system!Fri Jul 10 21:04:06 2020 : Program Exiting
+Tue Jul 14 14:55:05 2020 : Serial port opened successfully!
+Tue Jul 14 14:55:05 2020 : Serial port opened and settings configured!.
+Tue Jul 14 14:55:08 2020 : input/output serial lines flushed!
+Tue Jul 14 14:55:09 2020 : Thread for reading serial created.!
+Tue Jul 14 14:55:09 2020 : Beginning acquisition system!
+Tue Jul 14 15:00:01 2020 : Save routine time window: 2020,07,14,14,55,11:2020,07,14,15,00,00
+Tue Jul 14 16:00:01 2020 : Save routine time window: 2020,07,14,15,00,1:2020,07,14,16,00,00
+Tue Jul 14 17:00:01 2020 : Save routine time window: 2020,07,14,16,00,1:2020,07,14,17,00,00
+Tue Jul 14 18:00:01 2020 : Save routine time window: 2020,07,14,17,00,1:2020,07,14,18,00,00
+Tue Jul 14 19:00:01 2020 : Save routine time window: 2020,07,14,18,00,1:2020,07,14,19,00,00
+Tue Jul 14 20:00:01 2020 : Save routine time window: 2020,07,14,19,00,1:2020,07,14,20,00,00
+Tue Jul 14 20:32:04 2020 : Program Exiting
