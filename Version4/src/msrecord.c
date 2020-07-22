@@ -1,18 +1,15 @@
 #include "msrecord.h"
-/**
-int MSRecord2DLServer(char *record, char streamID[50], hptime_t record_endtime, hptime_t record_starttime, DLCP *dlconn, int reclen )
-{
 
-    if ( dl_write (dlconn, record, reclen, streamID, record_starttime, record_endtime, 1) < 0 )
-    {
-        fprintf(stderr,"Error sending %s record to datalink server.\n", streamID);
-		return -1;
-    }
-
-    return 1; // record sent
-    // printf("Record sent!\n");
-}
-*/
+/**************************************************************************
+ * msrecord_struct_init:
+ *
+ * This function initializes a miniSEED record structure for each component
+ * of the digitizer.
+ *
+ * North South (NS), East West (EW), and Z (Z) components.
+ *
+ * Return -1 on error.
+************************************************************************/
 int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log)
 {
     if(!(msrecord->msr_NS = msr_init(msrecord->msr_NS)))
@@ -32,8 +29,19 @@ int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log)
         return -1;
     }
     return 1;
-}
+} /* end of msrecord_struct_init() */
 
+/**************************************************************************
+ * msrecord_struct_update:
+ *
+ * Updates miniSEED record structure for each component with data provided
+ * in the configuration file.
+ *
+ * Data includes:
+ *      network, station, location, channel, reclen, data quality,
+ *      sample rate, encoding, byte order, number of samples, sample type,
+ *      sample count
+***************************************************************************/
 void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members)
 {
 
@@ -61,11 +69,10 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
     msrecord->msr_NS->numsamples = msrecord->msr_EW->numsamples = msrecord->msr_Z->numsamples = msrecord_members->numsamples;
     msrecord->msr_NS->sampletype = msrecord->msr_EW->sampletype = msrecord->msr_Z->sampletype = msrecord_members->sampletype;
     msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = msrecord_members->numsamples;
-}
+} /* end of msrecord_struct_update */
 int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, flag save_check,
-                 char *save_dir)
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, struct save_mseed_file_params *save_2_mseed_file)
 {
     // arrays to store data
     int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members->numsamples);
@@ -91,7 +98,6 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     int sample_ptr_counter;
 
     char date_time [27];
-
     ///////////////////////
     int packed_samples;
     int packed_records;
@@ -114,11 +120,13 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     struct datetime endtime_save;
     // The following variables represent the save command initiated by the OS.
     // It uses slarchive and a time window (begin:end)
-    char *slarchive_command = "~/Desktop/slarchive-2.2/./slarchive -tw ";
-    char *save_option = " -CSS ";
-    char *sl_host_port = " localhost:18000 ";
-    int save_command_length = strlen(slarchive_command) + strlen(save_option) + strlen(sl_host_port) + strlen(save_dir) + 50;
-    char save_command[save_command_length];
+    //char *slarchive_command = "~/Desktop/slarchive-2.2/./slarchive -tw ";
+    //char *save_option = " -CSS ";
+    //char *sl_host_port = " localhost:18000 ";
+    int save_command_length = strlen(save_2_mseed_file->slarchive_command) +
+                              strlen(save_2_mseed_file->save_option) +
+                              strlen(save_2_mseed_file->sl_port_host) +
+                              strlen(save_2_mseed_file->save_dir) + 50;
 
     // Begin Acquisition System
     fprintf(fp_log, "%s: Beginning acquisition system!\n", get_log_time());
@@ -144,7 +152,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
         //printf("%s\n", date_time);
         // set initial timestamp to begin saving with
         // since we are saving every hour, get the initial hour
-        if (endtime == 0 && save_check)
+        if (endtime == 0 && save_2_mseed_file->save_check)
         {
             extract_datetime(starttime, &starttime_save);
         }
@@ -218,12 +226,14 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
             data_sample_counter = 0;
 
             // run save check
-            if (save_check)
+            if (save_2_mseed_file->save_check)
             {
                 extract_datetime(starttime_temp, &endtime_save);
                 // run save routine
                 if (atoi(starttime_save.hour) != atoi(endtime_save.hour))
                 {
+                    // add check to make sure drive with save location is mounted
+
                     fprintf(fp_log, "%s: Save routine time window: %s,%s,%s,%s,%s,%s:%s,%s,%s,%s,%s,%s\n", get_log_time(),
                             starttime_save.year, starttime_save.month, starttime_save.day, starttime_save.hour,
                             starttime_save.mins, starttime_save.sec, endtime_save.year, endtime_save.month,
@@ -231,36 +241,8 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
 
                     fflush(fp_log);
 
-                    strcpy(save_command, slarchive_command);
-                    strcat(save_command, starttime_save.year);
-                    strcat(save_command, ",");
-                    strcat(save_command, starttime_save.month);
-                    strcat(save_command, ",");
-                    strcat(save_command, starttime_save.day);
-                    strcat(save_command, ",");
-                    strcat(save_command, starttime_save.hour);
-                    strcat(save_command, ",");
-                    strcat(save_command, starttime_save.mins);
-                    strcat(save_command, ",");
-                    strcat(save_command, starttime_save.sec);
-                    strcat(save_command, ":");
-                    strcat(save_command, endtime_save.year);
-                    strcat(save_command, ",");
-                    strcat(save_command, endtime_save.month);
-                    strcat(save_command, ",");
-                    strcat(save_command, endtime_save.day);
-                    strcat(save_command, ",");
-                    strcat(save_command, endtime_save.hour);
-                    strcat(save_command, ",");
-                    strcat(save_command, endtime_save.mins);
-                    strcat(save_command, ",");
-                    strcat(save_command, endtime_save.sec);
+                    run_save_command(&starttime_save, &endtime_save, save_2_mseed_file, save_command_length);
 
-                    strcat(save_command, save_option);
-                    strcat(save_command, save_dir);
-                    strcat(save_command, sl_host_port);
-                    strcat(save_command, "&");
-                    system(save_command);
                     //printf("%s\n", save_command);
                     //printf("%s\n", save_location);
                     // set starttime_save = endtime_save
@@ -271,7 +253,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
                     strcpy(starttime_save.mins, endtime_save.mins);
                     int temp_sec = atoi(endtime_save.sec) + 1;
                     sprintf(starttime_save.sec, "%d", temp_sec);
-                    //strcpy(starttime_save.sec, (char)(atoi(endtime_save.sec) + 1));
+                    //strcpy(starttime_save.sec, (char)(atoi(endtime_save.sec) + 1));*/
                 }
             }
         }
@@ -340,7 +322,7 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
     // run time correction algorithm
     hptime_t diff_stn1_etn = starttime - *endtime;
 
-    // remove samples
+    // remove n number of samples
     if(diff_stn1_etn < 0)
     {
         int i = 0;
@@ -377,7 +359,7 @@ int time_correction(hptime_t starttime, hptime_t *endtime, hptime_t hptime_sampl
         return -1;
     }
 
-    // add samples
+    // add n number of samples
     else if (diff_stn1_etn > hptime_sample_period)
     {
         int i = 0;
@@ -419,10 +401,83 @@ char *generate_stream_id(MSRecord *msr)
 
 }
 
-
+/**************************************************************************
+ * extract_datetime:
+ *
+ * Function for extracting date time components from a hptime variable.
+ *
+ * The hptime variable is first converted to a iso time string and then the
+ * following components are extracted with sscanf:
+ * year, month, day, hour, minutes, seconds
+ *
+ * The extracted components are stored in a datetime structure.
+***************************************************************************/
 void extract_datetime(hptime_t hptime, struct datetime *dt)
 {
     char date_time[27];
     ms_hptime2isotimestr(hptime, date_time,0);
     sscanf(date_time, "%4s-%2s-%2sT%2s:%2s:%2s", dt->year, dt->month, dt->day, dt->hour, dt->mins, dt->sec);
-}
+} /* end of extract_datetime() */
+
+/**********************************************************************************************************
+ * run_save_command:
+ *
+ * Executes a command that saves data into miniSEED files to a specified directory.
+ *
+ * Uses a pre compilied C program: slarchive.
+ *
+ * The save command is formatted as follows:
+ * ./slarchive -tw st:et save_option save_dir sl_host_port
+ *
+ * st: starttime is provided to the function.
+ * et: endtime is provided to the function.
+ *
+ * save_option, save_dir, and sl_host_port is provided from the config file.
+ *
+ * Example save command:
+ * ./slarchive -tw 2020,07,21,12,00,00:2020,07,21,15,00,00,00 -CSS /media/arvid/data_drive localhost:18000
+ *
+ * Refer to slarchive by Trad Trabant for more information.
+**********************************************************************************************************/
+void run_save_command(struct datetime *starttime_save, struct datetime *endtime_save,
+                      struct save_mseed_file_params *save_2_mseed_file, int save_command_length)
+{
+    char save_command[save_command_length];
+    strcpy(save_command, save_2_mseed_file->slarchive_command);
+    strcat(save_command, " ");
+    strcat(save_command, starttime_save->year);
+    strcat(save_command, ",");
+    strcat(save_command, starttime_save->month);
+    strcat(save_command, ",");
+    strcat(save_command, starttime_save->day);
+    strcat(save_command, ",");
+    strcat(save_command, starttime_save->hour);
+    strcat(save_command, ",");
+    strcat(save_command, starttime_save->mins);
+    strcat(save_command, ",");
+    strcat(save_command, starttime_save->sec);
+    strcat(save_command, ":");
+    strcat(save_command, endtime_save->year);
+    strcat(save_command, ",");
+    strcat(save_command, endtime_save->month);
+    strcat(save_command, ",");
+    strcat(save_command, endtime_save->day);
+    strcat(save_command, ",");
+    strcat(save_command, endtime_save->hour);
+    strcat(save_command, ",");
+    strcat(save_command, endtime_save->mins);
+    strcat(save_command, ",");
+    strcat(save_command, endtime_save->sec);
+    strcat(save_command, " ");
+
+    strcat(save_command, save_2_mseed_file->save_option);
+    strcat(save_command, " ");
+    strcat(save_command, save_2_mseed_file->save_dir);
+    strcat(save_command, " ");
+    strcat(save_command, save_2_mseed_file->sl_port_host);
+    strcat(save_command, " ");
+    strcat(save_command, "&");
+    // call save command
+    system(save_command);
+} /* end of run_save_command() */
+

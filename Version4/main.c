@@ -51,8 +51,6 @@
 #define STATUS_LED 17
 #define TIMESTAMP_PIN 19
 /******* Function definitions *********/
-int data_counter = 0;
-int data_block_counter = 0;
 
 void TimeStamp(void);
 void *read_serial_buffer(void *arg);
@@ -62,7 +60,6 @@ int parse_config_file();
 void msrecord_free();
 void dlconn_free();
 
-//int parse_config_file(FILE *fp);
 
 /******* Global Variables **************/
 
@@ -71,23 +68,12 @@ struct  timestamp_buffer *timestamp_queue;
 // data buffer is a queue type implementation
 struct data_buffer *data_queue;
 
-// max 30 characters
-char SaveFolderUSBE[43];
-char SaveFolderUSBN[43];
-char SaveFolderUSBZ[43];
 
 // Thread stop variables
 int stop_read_serial_buffer_thread = 1;
 int StopTimeStamp = 1;
 int StopTimeStampCont = 0;
 
-
-// usb drive location to store mseed files
-char data_save_location[30];
-
-// flag used to create and store mseed files. 1 = create, 0 = don't create
-int save_mseed_file;
-int save_mseed_file_temp;
 
 FILE *fp_log;
 // usb mount command
@@ -98,25 +84,10 @@ char check_mount[70];
 // datalink connection definition
 DLCP *dlconn;
 
-// variable to store Latest packet id for each channel saved to a file
-int LatestPktIDSavedE = 0;
-int LatestPktIDSavedN = 0;
-int LatestPktIDSavedZ = 0;
-
-// folder where mseed files are saved
-char *SaveFolderE;
-char *SaveFolderN;
-char *SaveFolderZ;
-
 // stream id for each channel in sensor
 char stream_id_ew[50];
 char stream_id_ns[50];
 char stream_id_z[50];
-
-// source name for each channel in sensor
-char source_name_ew[50];
-char Source_name_ns[50];
-char source_name_z[50];
 
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t lock_timestamp;
@@ -130,10 +101,10 @@ hptime_t hptime_temp = 0;
 
 ////////////////////////
 
-int counter = 0;
-
 struct msrecord_struct msrecord;
 struct msrecord_struct_members msrecord_members;
+
+struct save_mseed_file_params save_2_mseed_file;
 /* Main Program */
 int main()
 {
@@ -386,16 +357,20 @@ int main()
     // if not, set save check to 0
 
     strcpy(check_mount, mount_command);
-    strcat(check_mount, data_save_location);
+    strcat(check_mount, save_2_mseed_file.save_dir);
     // drive not mounted
-    if (save_mseed_file == 1 && system(check_mount) != 0)
+    if (save_2_mseed_file.save_check == 1 && system(check_mount) != 0)
     {
-        fprintf(fp_log, "%s: Location for saving mseed files at %s is not mounted. Data will only be stored in ring buffer. Please check if save location is mounted correctly for data to be stored in mseed files\n", get_log_time(), data_save_location);
-        save_mseed_file = 0;
+        fprintf(fp_log, "%s: Location for saving mseed files at %s is not mounted. Data will only be stored in ring buffer. Please check if save location is mounted correctly.\n", get_log_time(), save_2_mseed_file.save_dir);
+        save_2_mseed_file.save_check = 0;
     }
+
+    if (save_2_mseed_file.save_check)
+        fprintf(fp_log, "%s: Saving data to mseed files option selected. Data will be stored at: %s\n", get_log_time(), save_2_mseed_file.save_dir);
+
     // beging acuqisition system
     process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn,
-                 save_mseed_file, data_save_location);
+                 &save_2_mseed_file);
 
     // returned after process data finishes
     stop_read_serial_buffer_thread = 0;
@@ -558,12 +533,25 @@ void *read_serial_buffer(void *arg)
 }
 
 
+/***********************************************************************
+ * parse_config_file:
+ *
+ * Function for parsing SDAS configuration file.
+ *
+ * Configuration file contains information on creating mseed records and
+ * parameters associated with saving data to mseed files.
+ *
+ * Data is parsed into appropriate variables.
+ *
+ * Return -1 on error
+************************************************************************/
 int parse_config_file()
 {
     config_t cfg, *cf;
     cf = &cfg;
     config_init(cf);
 
+    // read config file
     if (!config_read_file(cf, "config.cfg"))
     {
         fprintf(stderr, "%s:%d - %s\n", config_error_file(cf),
@@ -578,8 +566,63 @@ int parse_config_file()
         config_destroy(cf);
         return -1;
     }
-    // msr struct variables
     const char *temp;
+
+    /*
+     * Read parameters associated with saving data to mseed files
+     */
+
+    // save command
+    if (config_lookup_string(cf, "save2mseedparams.savecommand", &temp))
+        strcpy(save_2_mseed_file.slarchive_command, temp);
+    else
+    {
+        fprintf(fp_log, "%s: save command is not defined.\n", get_log_time());
+        return -1;
+    }
+
+    // save option
+    if (config_lookup_string(cf, "save2mseedparams.saveoption", &temp))
+        strcpy(save_2_mseed_file.save_option, temp);
+    else
+    {
+        fprintf(fp_log, "%s: save option is not defined.\n", get_log_time());
+        return -1;
+    }
+
+    // seedlink host and port
+    if (config_lookup_string(cf, "save2mseedparams.slhostport", &temp))
+        strcpy(save_2_mseed_file.sl_port_host, temp);
+    else
+    {
+        fprintf(fp_log, "%s: seedlink host and port is not defined.\n", get_log_time());
+        return -1;
+    }
+
+    // data save location
+    if (config_lookup_string(cf, "save2mseedparams.datasavelocation", &temp))
+        strcpy(save_2_mseed_file.save_dir, temp);
+    else
+    {
+        fprintf(fp_log, "%s: save directory is not defined.\n", get_log_time());
+        return -1;
+    }
+
+    // save 2 mseed file flag (or save check)
+    int temp_save_check;
+    if (config_lookup_int(cf, "save2mseedparams.savecheck", &temp_save_check))
+        save_2_mseed_file.save_check = (int)temp_save_check;
+    else
+    {
+        fprintf(fp_log, "%s: save check is not defined.\n", get_log_time());
+        return -1;
+    }
+
+    /*
+     * MSR structure variables
+     */
+
+    // network
     if (config_lookup_string(cf, "msrstruct.network", &temp))
         strcpy(msrecord_members.network, temp);
     else
@@ -588,6 +631,7 @@ int parse_config_file()
         return -1;
     }
 
+    // station
     if (config_lookup_string(cf, "msrstruct.station", &temp))
         strcpy(msrecord_members.station, temp);
     else
@@ -596,6 +640,7 @@ int parse_config_file()
         return -1;
     }
 
+    // location
     if (config_lookup_string(cf, "msrstruct.location", &temp))
         strcpy(msrecord_members.location,temp);
     else
@@ -604,6 +649,7 @@ int parse_config_file()
         return -1;
     }
 
+    // dataquality
     if (config_lookup_string(cf, "msrstruct.dataquality", &temp))
         msrecord_members.dataquality = temp[0];//strcpy(dataquality, temp);
     else
@@ -612,6 +658,7 @@ int parse_config_file()
         return -1;
     }
 
+    // encoding
     int temp_encoding;
     if (config_lookup_int(cf, "msrstruct.encoding", &temp_encoding))
         msrecord_members.encoding = (int8_t)temp_encoding;
@@ -621,6 +668,7 @@ int parse_config_file()
         return -1;
     }
 
+    // sample type
     if (config_lookup_string(cf, "msrstruct.sampletype", &temp))
         msrecord_members.sampletype = temp[0];
     else
@@ -629,6 +677,7 @@ int parse_config_file()
         return -1;
     }
 
+    // sample rate
     double temp_samprate;
     if (config_lookup_float(cf, "msrstruct.samprate", &temp_samprate))
         msrecord_members.samprate = (double)temp_samprate;
@@ -638,6 +687,7 @@ int parse_config_file()
         return -1;
     }
 
+    // byte order
     int temp_byteorder;
     if (config_lookup_int(cf, "msrstruct.byteorder", &temp_byteorder))
         msrecord_members.byteorder = (int8_t)temp_byteorder;
@@ -647,6 +697,7 @@ int parse_config_file()
         return -1;
     }
 
+    // record length
     int temp_reclen;
     if (config_lookup_int(cf, "msrstruct.reclen", &temp_reclen))
         msrecord_members.reclen = (int)temp_reclen;
@@ -655,6 +706,7 @@ int parse_config_file()
         fprintf(fp_log, "%s: reclen not defined\n", get_log_time());
         return -1;
     }
+
     // channel names
     const config_setting_t *channel_names;
     channel_names = config_lookup(cf, "channelname");
@@ -692,28 +744,11 @@ int parse_config_file()
 
     //printf("%s %s %s\n", ChannelNameEW, ChannelNameNS, ChannelNameZ);
 
-    // usb save location
-    if (config_lookup_string(cf, "datasavelocation", &temp))
-        strcpy(data_save_location, temp);
-    else
-    {
-        fprintf(fp_log, "%s: usblocation not found\n", get_log_time());
-        return -1;
-    }
-
-    // save2mseed file flag
-    if (config_lookup_int(cf, "save2mseedfile", &save_mseed_file))
-        ;
-    else
-    {
-        fprintf(fp_log, "%s: save2mseedfile not found\n", get_log_time());
-        return -1;
-    }
     //save_mseed_file_temp = save_mseed_file;
     config_destroy(cf);
 
     return 1;
-}
+} /* end of parse_config_file() */
 
 void msrecord_free()
 {

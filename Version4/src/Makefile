@@ -14,7 +14,7 @@ LDLIBS  = -ldali -lezxml -lmseed -lwiringPi -lpthread -lconfig
 
 BIN  = ../sdas
 
-OBJS = sdas.o mseedfilesetup.o msrecord.o queue.o serialutils.o utils.o
+OBJS = main.o mseedfilesetup.o msrecord.o queue.o serialutils.o utils.o
 
 all: $(BIN)
 
