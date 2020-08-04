@@ -2,7 +2,7 @@
 //#include "SPI.h"
 
 #define PGA 1
-#define VREF1 3.305
+#define VREF1 5
 #define VREF2 2.048
 
 #define VFSR1 VREF1/PGA
@@ -46,6 +46,9 @@ long int bit24_Z_temp = 0;
 int avg_count = 0;
 
 float Vout;
+float Vout_N;
+float Vout_E;
+float Vout_Z;
 long int dataZ;
 long int dataNS;
 long int dataPot;
@@ -95,17 +98,13 @@ void setup() {
 
   Serial.begin(115200);
 
-  /**
+  
   while (!Serial.available())
   {
     delay(1000);
-<<<<<<< HEAD
      //do nothing
   }
-=======
-    // do nothing
-  }*/
->>>>>>> master
+
 
   while(Serial.available())
   {
@@ -145,7 +144,7 @@ void setup() {
   ADS1220.begin();
     //digitalWrite(22, HIGH);
 
-  //pinsInput();
+  //pinsInput();/////////////////////////////////////////////////
   Serial.println("*");
   //setupTimer();
   //starttime = micros();
@@ -211,7 +210,7 @@ void readData(bool print2Serial)
     //  Serial.println((16777215 - bit24_N)*-1);
   //  }
    // else
-      Serial.println(bit24_N);
+      //Serial.println(bit24_N);
     /**
     Serial.print(bit24_N);
     Serial.print(" ");
@@ -222,12 +221,27 @@ void readData(bool print2Serial)
    //Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
   //Serial.println("1000*1000*1000");
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
-    //Serial.println(bit24_E);
+    Serial.println(bit24_E);
     //printData();
-   // print_voltage();
+    printVoltage();
   }
 }
 
+void printVoltage()
+{ 
+ 
+  
+  Vout_N = ((float)(bit24_N * VFSR1) / (float)FSR);
+  Vout_E = ((float)(bit24_E * VFSR1) / (float)FSR);
+  Vout_Z = ((float)(bit24_Z * VFSR1) / (float)FSR);
+  
+  Serial.print(Vout_N, 5);
+  Serial.print("  ");
+  Serial.print(Vout_E, 5);
+  Serial.print("  ");
+  Serial.println(Vout_Z, 5);
+  
+}
 
 void pinsInput(void)
 {
