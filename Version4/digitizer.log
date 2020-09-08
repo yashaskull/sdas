@@ -1,14 +1,13 @@
-Wed Jul 22 18:54:44 2020 : Connected to DataLink server @ localhost:16000!
-Wed Jul 22 18:54:44 2020 : Memory spaced allocated for MSR structure.
-Wed Jul 22 18:54:44 2020 : MSR initalized
-Wed Jul 22 18:54:44 2020 : Data buffer created and initialized
-Wed Jul 22 18:54:44 2020 : Timestamp queue created
-Wed Jul 22 18:54:44 2020 : Timestamp queue initialized!
+Tue Sep  8 18:47:27 2020 : Connected to DataLink server @ localhost:16000!
+Tue Sep  8 18:47:27 2020 : Memory spaced allocated for MSR structure.
+Tue Sep  8 18:47:27 2020 : MSR initalized
+Tue Sep  8 18:47:27 2020 : Data buffer created and initialized
+Tue Sep  8 18:47:27 2020 : Timestamp queue created
+Tue Sep  8 18:47:27 2020 : Timestamp queue initialized!
 gpio 17: 0
-Wed Jul 22 18:54:44 2020 : Serial port opened successfully!
-Wed Jul 22 18:54:44 2020 : Serial port opened and settings configured!.
-Wed Jul 22 18:54:47 2020 : input/output serial lines flushed!
-Wed Jul 22 18:54:48 2020 : Thread for reading serial created.!
-Wed Jul 22 18:54:48 2020 : Saving data to mseed files option selected. Data will be stored at: /media/arvid/data_drive
-Wed Jul 22 18:54:48 2020 : Beginning acquisition system!
-Wed Jul 22 19:00:01 2020 : Save routine time window: 2020,07,22,18,54,50:2020,07,22,19,00,00
+Tue Sep  8 18:47:27 2020 : Serial port opened successfully!
+Tue Sep  8 18:47:27 2020 : Serial port opened and settings configured!.
+Tue Sep  8 18:47:30 2020 : input/output serial lines flushed!
+Tue Sep  8 18:47:31 2020 : Thread for reading serial created.!
+Tue Sep  8 18:47:31 2020 : Beginning acquisition system!
+Tue Sep  8 19:09:13 2020 : Program Exiting

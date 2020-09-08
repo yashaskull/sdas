@@ -124,7 +124,7 @@ int main()
 
         return -1;
     }
-    msrecord_members.numsamples = 200;
+    msrecord_members.numsamples = 200;//200
 
     /* The Ring server is the main storage of MSEED packets.
      * The DataLink (DL) protocol is used to send MSEED packets to the ringserver.

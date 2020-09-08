@@ -106,7 +106,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
     hptime_t endtime = 0;
     //hptime_t hptime_diff;
 
-    //float sample_period = 1/200.0;
+    //float sample_period = 1/200.0;5000
     hptime_t hptime_sample_period = ms_time2hptime(1970, 01, 00, 00, 00, 5000);
     ///////////////////////
     //////
@@ -294,10 +294,34 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_member
                     sample_ptr = strtok(NULL, "*");
                 }
                 //sample_block_ns[data_sample_counter] = atoi(data_sample_token[0]);
-                sample_block_ns[data_sample_counter] = atoi(data_sample_token[0]);
-                sample_block_ew[data_sample_counter] = atoi(data_sample_token[1]);
-                sample_block_z[data_sample_counter] = atoi(data_sample_token[2]);
+                int32_t sample;
 
+                // ns sample
+                sample = atoi(data_sample_token[0]);
+                if (sample >= 8388608 && sample <= 16777215)
+                    sample_block_ns[data_sample_counter] = (16777215 - sample) * -1;
+                else
+                    sample_block_ns[data_sample_counter] = sample;
+
+                // ew sample
+                sample = atoi(data_sample_token[1]);
+                if (sample >= 8388608 && sample <= 16777215)
+                    sample_block_ew[data_sample_counter] = (16777215 - sample) * -1;
+                else
+                    sample_block_ew[data_sample_counter] = sample;
+
+                // z sample
+                sample = atoi(data_sample_token[2]);
+                if (sample >= 8388608 && sample <= 16777215)
+                    sample_block_z[data_sample_counter] = (16777215 - sample) * -1;
+                else
+                    sample_block_z[data_sample_counter] = sample;
+
+                /**
+                sample_block_ns[data_sample_counter] = atoi(data_sample_token[0]);// NS
+                sample_block_ew[data_sample_counter] = atoi(data_sample_token[1]);// EW
+                sample_block_z[data_sample_counter] = atoi(data_sample_token[2]);// Z
+                */
                 data_sample_counter ++;
                 free (data_sample);
             }
