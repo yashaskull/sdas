@@ -45,6 +45,7 @@ long int bit24_N_temp = 0;
 long int bit24_Z_temp = 0;
 int avg_count = 0;
 
+float temp;
 float Vout;
 float Vout_N;
 float Vout_E;
@@ -205,23 +206,49 @@ void readData(bool print2Serial)
   counter ++;
   if (print2Serial == true) 
   {
-    /**
+
+   /**
+    if (bit24_N >= 8388608 && bit24_N <= 16777215)
+    {
+      bit24_N = (16777215 - bit24_N) * -1;
+      //temp = (float)bit24_N;
+      Serial.print(bit24_N);
+      //sendToPython(&temp);
+    }
+    else
+    {
+      //temp = (float)bit24_N;
+      //sendToPython(&temp);
+      //Serial.println(temp);
+      //sendToPython(&temp);
+      Serial.print(bit24_N);
+    }
+    Serial.print(" ");
+
+    if (bit24_E >= 8388608 && bit24_E <= 16777215)
+    {
+      Serial.print((16777215 - bit24_E)*-1);
+    }
+    else
+      Serial.print(bit24_E);
+
+    Serial.print(" ");
+
     if (bit24_Z >= 8388608 && bit24_Z <= 16777215)
     {
       Serial.println((16777215 - bit24_Z)*-1);
     }
     else
       Serial.println(bit24_Z);*/
-
-    
-    //Serial.print(bit24_N);
+   
+    //Serial.println(bit24_N);
     //Serial.print(" ");
     //Serial.print(bit24_E );
     //Serial.print(" ");
     //Serial.println(bit24_Z);
     //Serial.println((String)bit24_Z);
-   //Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
-   Serial.println((String)bit24_Z+'*'+(String)bit24_Z+'*'+(String)bit24_Z);
+   Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
+  // Serial.println((String)bit24_Z+'*'+(String)bit24_Z+'*'+(String)bit24_Z);
   //Serial.println("1000*1000*1000");
   //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
     //Serial.println(bit24_N);
@@ -287,3 +314,11 @@ void printCounter()
   Serial.println(counter);
   counter = 0;
 }
+
+void sendToPython(float *data)
+{
+  byte *byteData = (byte*)data;
+  Serial.write(byteData, 4);
+}
+
+
