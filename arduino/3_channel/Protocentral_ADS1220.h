@@ -1,4 +1,3 @@
-
 //#ifndef ads1292r_h
 //#define ads1292r_h
 
@@ -74,13 +73,13 @@
 */
 
 
-#define ADS1220_CS_PIN_1 44
-#define ADS1220_CS_PIN_2 46
-#define ADS1220_CS_PIN_3 42
+#define ADS1220_CS_PIN_1 48
+#define ADS1220_CS_PIN_2 44
+#define ADS1220_CS_PIN_3 40
 
-#define ADS1220_DRDY_PIN_1 45
-#define ADS1220_DRDY_PIN_2 47
-#define ADS1220_DRDY_PIN_3 43
+#define ADS1220_DRDY_PIN_1 49
+#define ADS1220_DRDY_PIN_2 46
+#define ADS1220_DRDY_PIN_3 42
 
 
 
@@ -104,6 +103,8 @@ class Protocentral_ADS1220
     void begin(void);
     static void SPI_Start(void);
     static void SPI_Reset(void);
+    static void powerDown(void);
+
 
     static void SPI_Command(unsigned char data_in);
     void writeRegister(uint8_t address, uint8_t value);

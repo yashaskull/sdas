@@ -1748,7 +1748,7 @@ mst_pack (MSTrace *mst, int reclen, flag encoding, flag byteorder,
 	printf("Herer\n");
   /* Pack data */
    // trpackedrecords = msr_pack (msr, record_handler, handlerdata, &trpackedsamples, flush, //verbose);
-  trpackedrecords = msr_pack (msr, &trpackedsamples, flush, verbose, &record_temp);
+  //trpackedrecords = msr_pack (msr, &trpackedsamples, flush, verbose, &record_temp);
 	printf("returned from mst_pack\n");
 	memcpy(*record, record_temp, 512);
 	free(record_temp);

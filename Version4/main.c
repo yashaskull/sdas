@@ -368,6 +368,9 @@ int main()
     if (save_2_mseed_file.save_check)
         fprintf(fp_log, "%s: Saving data to mseed files option selected. Data will be stored at: %s\n", get_log_time(), save_2_mseed_file.save_dir);
 
+    //write_serial();
+    //int da;
+    //scanf("%d\n", &da);
     // beging acuqisition system
     process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn,
                  &save_2_mseed_file);

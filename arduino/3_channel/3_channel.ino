@@ -1,4 +1,4 @@
-#include "Protocentral_ADS1220.h"
+  #include "Protocentral_ADS1220.h"
 //#include "SPI.h"
 
 #define PGA 1
@@ -91,6 +91,7 @@ void print_voltage();
 volatile int counter = 0;
 const byte interruptPin = 3;
 
+int sample_counter = 0;
 ////////////////////
 
 ////////////////////
@@ -105,14 +106,12 @@ void setup() {
     delay(1000);
      //do nothing
   }
-
-
+  
   while(Serial.available())
   {
     Serial.read();
   }
   delay(1000);
-
   
   pinMode(ADS1220_CS_PIN_1, OUTPUT);
   digitalWrite(ADS1220_CS_PIN_1, HIGH);
@@ -142,30 +141,32 @@ void setup() {
 
 
   
-  ADS1220.begin();
+ADS1220.begin();
+ // ADS1220.powerDown();
     //digitalWrite(22, HIGH);
 
   //pinsInput();/////////////////////////////////////////////////
   Serial.println("*");
   //setupTimer();
-  //starttime = micros();
+ // starttime = micros();
 }
 void loop()
 {
   if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW  && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
   {
-    readData(true);
+  
+    if (sample_counter == 2)// 200 SPS
+      readData(true);
+    else
+    {
+      readData(false);
+      sample_counter++;
+    }
+    //readData(true);
   }
-
   
   if (counter == 200)
   {
-  /**
-    if (digitalRead(22) == LOW)
-      digitalWrite(22, HIGH);
-    else
-      digitalWrite(22, LOW);*/
-    
     Serial.println("*");//////////////////////////////////////////
     counter = 0;
   }
@@ -178,7 +179,6 @@ void readData(bool print2Serial)
   SPI_RX_Buff_Ptr_2 = ADS1220.Read_Data_2();
   SPI_RX_Buff_Ptr_3 = ADS1220.Read_Data_3();
 
-
   MSB = SPI_RX_Buff_Ptr_1[0];
   data = SPI_RX_Buff_Ptr_1[1];
   LSB = SPI_RX_Buff_Ptr_1[2];
@@ -186,15 +186,12 @@ void readData(bool print2Serial)
   bit24_N = (bit24_N << 8) | data;
   bit24_N = (bit24_N << 8) | LSB;
 
-  
-   MSB = SPI_RX_Buff_Ptr_2[0];
+  MSB = SPI_RX_Buff_Ptr_2[0];
   data = SPI_RX_Buff_Ptr_2[1];
   LSB = SPI_RX_Buff_Ptr_2[2];
   bit24_E = MSB;
   bit24_E = (bit24_E << 8) | data;
   bit24_E = (bit24_E << 8) | LSB;
-
-  
 
   MSB = SPI_RX_Buff_Ptr_3[0];
   data = SPI_RX_Buff_Ptr_3[1];
@@ -203,28 +200,24 @@ void readData(bool print2Serial)
   bit24_Z = (bit24_Z << 8) | data;
   bit24_Z = (bit24_Z << 8) | LSB;
 
-  counter ++;
+  //counter ++;
   if (print2Serial == true) 
   {
-
-   /**
+    counter++;
+    sample_counter = 0;
+  
+          //Serial.println(bit24_N);
+/**
     if (bit24_N >= 8388608 && bit24_N <= 16777215)
     {
-      bit24_N = (16777215 - bit24_N) * -1;
-      //temp = (float)bit24_N;
-      Serial.print(bit24_N);
-      //sendToPython(&temp);
+      Serial.print((16777215 - bit24_N)*-1);
     }
     else
-    {
-      //temp = (float)bit24_N;
-      //sendToPython(&temp);
-      //Serial.println(temp);
-      //sendToPython(&temp);
       Serial.print(bit24_N);
-    }
-    Serial.print(" ");
 
+   Serial.print(" ");
+     
+     
     if (bit24_E >= 8388608 && bit24_E <= 16777215)
     {
       Serial.print((16777215 - bit24_E)*-1);
@@ -234,6 +227,7 @@ void readData(bool print2Serial)
 
     Serial.print(" ");
 
+
     if (bit24_Z >= 8388608 && bit24_Z <= 16777215)
     {
       Serial.println((16777215 - bit24_Z)*-1);
@@ -241,26 +235,13 @@ void readData(bool print2Serial)
     else
       Serial.println(bit24_Z);*/
    
-    //Serial.println(bit24_N);
-    //Serial.print(" ");
-    //Serial.print(bit24_E );
-    //Serial.print(" ");
-    //Serial.println(bit24_Z);
-    //Serial.println((String)bit24_Z);
-   Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
-  // Serial.println((String)bit24_Z+'*'+(String)bit24_Z+'*'+(String)bit24_Z);
-  //Serial.println("1000*1000*1000");
-  //Serial.println('z'+(String)bit24_Z+'*'+'n'+(String)bit24_N+'*'+'e'+(String)bit24_E);
-    //Serial.println(bit24_N);
-    //printData();
-    //printVoltage();
+  Serial.println((String)bit24_N+'*'+(String)bit24_E+'*'+(String)bit24_Z);
+  // Serial.println(bit24_Z);
   }
 }
 
 void printVoltage()
 { 
- 
-  
   Vout_N = ((float)(bit24_N * VFSR1) / (float)FSR);
   Vout_E = ((float)(bit24_E * VFSR1) / (float)FSR);
   Vout_Z = ((float)(bit24_Z * VFSR1) / (float)FSR);

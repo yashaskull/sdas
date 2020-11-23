@@ -1,5 +1,5 @@
 
-DIRS = libdali ezxml libmseed src
+DIRS = libdali ezxml libmseed src slarchive-2.2 ringserver
 
 all gcc debug gccdebug clean static install ::
 	@for d in $(DIRS) ; do \
