@@ -12,6 +12,8 @@ For this tutorial:
 This tutorial assumes the OS is already installed and user has access to the RPi either through HDMI output or headless.
 Remember to fully update the OS.
 
+TEST AND WORKS ON UBUNTU MATE 16.04 LTS
+
 Procedure:
 
 1.	Attach GPS module to RPi GPIO according to configuration shown below:
