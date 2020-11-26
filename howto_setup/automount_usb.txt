@@ -1,1 +1,51 @@
-How to auto mount usb drive on RPi 3 B+ running Ubuntu Mate Ver 16.04
+How to automount a usb drive on RPi 3 B+ running Ubuntu Mate Ver. 16.04
+
+This method uses fstab
+
+This method was taken from:
+techrepublic.com/article/how-to-properly-automount-a-drive-in-ubuntu-linux/
+
+1. Locate partition you want to mount:
+  sudo fdisk -l
+  
+Look for: /dev/sda1 or /dev/sdb1 etc.
+
+2. Locate the UUID (Universial Unique Identifier)
+   sudo blkid
+ 
+This will display every UUID for every storage device attached to the system.
+Make note of the UUID of the usb drive you wish to mount.
+
+3. Create mount point:
+Mount point would typically be created in /media directory
+  sudo mkdir /media/data
+  
+4. automount entry
+  sudo nano /etc/fstab
+  
+Add a entry that looks like the entry below at the end of the fstab file:
+  UUID=14D82C19D82BF81E /media/data    auto nosuid,nodev,nofail,x-gvfs-show 0 0
+  
+  Break down of entry:
+  UUID=14D82C19D82BF81E - is the UUID of the drive. You don't have to use the UUID here. You could just use /dev/sdj, but it's always safer to use     the UUID as that will never change (whereas the device name could).
+  
+  /media/data - is the mount point for the device.
+  
+  auto - automatically mounts the partition at boot 
+  
+  nosuid - specifies that the filesystem cannot contain set userid files. This prevents root escalation and other security issues.
+  
+  nodev - specifies that the filesystem cannot contain special devices (to prevent access to random device hardware).
+  
+  nofail - removes the errorcheck.
+
+  x-gvfs-show - show the mount option in the file manager. If this is on a GUI-less server, this option won't be necessary.
+  
+  0 - determines which filesystems need to be dumped (0 is the default).
+  
+  0 - determine the order in which filesystem checks are done at boot time (0 is the default).
+  
+5. Testing the entry:
+    sudo mount -a
+ 
+ If you see no errors, the fstab entry is correct and you are safe to reboot.
