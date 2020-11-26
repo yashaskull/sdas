@@ -1,0 +1,14 @@
+How to setup Arduino CLI (Command Line Interface)
+
+The tutorial below pretty much explains how to setup the Arduino CLI.
+https://github.com/arduino/arduino-cli
+
+Hope the link never stops working. :P
+
+Remember:
+1. Add user to dialout group
+    sudo usermod -a -G dialout <username>
+where username is your Linux user name.
+
+2. Export $HOME before running Arduino CLI command when issued via startup script on boot. (example in rc.local)
+    export HOME=/home/raspi
