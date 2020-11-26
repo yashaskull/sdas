@@ -1,0 +1,123 @@
+This tutorial shows how to synchronize a ntp server on RPi 3 B+ to a GPS module by creating a stratum 1 time server.
+
+RPi 3 B+ running Ubuntu Mate Ver. 16.04 was used.
+
+Parts Needed
+
+RPi 3 B+ with OS installed.
+GPS module with PPS (PULSE PER SECOND) support.
+
+For this tutorial:
+1.	Ubuntu Mate Ver. 16.04 was used as the OS installed on the RPi 3B.
+2.	Waveshare NEO-6M/7M GPS module was used (RPi safe).
+
+This tutorial assumes the OS is already installed and user has access to the RPi either through HDMI output or headless.
+Remember to fully update the OS.
+
+Procedure:
+
+1.	Attach GPS module to RPi GPIO according to configuration shown below:
+	
+	GPS VCC -> RPi 3.3 V
+	GPS GND -> RPi GND
+	GPS TX  -> RPi GPIO15 (RX)
+	GPS RX  -> RPi GPIO14 (TX)
+	GPS PPS -> RPi GPIO18
+	
+2.	Edit the cmdline.txt:
+	
+	$ sudo nano /boot/cmdline.txt
+	Change to: dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles usbhid.mousepoll=0
+	
+	Exit and save
+	
+3. 	Edit config.txt (enabling UART):
+
+	$ sudo nano /boot/config.txt
+	
+	Add the following lines at the end of config.txt
+	dtoverlay=pps-gpio,gpiopin=18
+	enable_uart=1
+	core_freq=250
+	
+	Exit and save
+	
+4. 	Verify PPS is working:
+	
+	Install pps-tools:
+	$ sudo apt-get install pps-tools
+	
+	Issue the following command:
+	$ sudo ppstest /dev/pps0
+	
+	Output should be similar to:
+	ok, found 1 source(s), now start fetching data...
+	source 0 - assert 1586984509.000063074, sequence: 3167 - clear  0.000000000, sequence: 0
+	source 0 - assert 1586984510.000063347, sequence: 3168 - clear  0.000000000, sequence: 0
+	source 0 - assert 1586984511.000063945, sequence: 3169 - clear  0.000000000, sequence: 0
+	source 0 - assert 1586984512.000063656, sequence: 3170 - clear  0.000000000, sequence: 0
+
+5.	Install gpsd software and edit gpsd:
+	
+	$ sudo apt-get install gpsd gpsd-clients
+	$ sudo nano /etc/default/gpsd
+	
+	Add the following to gpsd:
+	DEVICES="/dev/serial0 /dev/pps0"
+	GPSD_OPTIONS='-n'
+	
+6. 	Reboot RPi.
+
+7.	Verify the RPi can read the GPS and PPS by executing the following commands.
+	
+	$sudo gpsmon
+	$sudo cgps -s
+	
+
+At this point, the ntp server on the RPi is ready to be synchronzied with the GPS module.
+
+8.	The ntp software comes pre installed on the Ubuntu Mate OS. However, it can be installed by executing the following command:
+
+	$sudo apt-get install ntp
+	
+9. 	Edit the ntp configuration file.
+	
+	$sudo nano /etc/ntp.conf
+	
+	Added the following lines:
+	# GPS .. shared memory with gpsd "time1 0.130"
+	server 127.127.28.0 mode 24 minpoll 4 maxpoll 4 iburst true prefer
+	fudge 127.127.28.0 time1 0.140 flag1 1 refid GPS stratum 1
+	
+	# PPS
+	server 127.127.22.0 mode 24 minpoll 4 maxpoll 4 iburst true
+	fudge 127.127.22.0 flag1 1 refid PPS
+	
+	Save and exit
+	
+10. Restart the ntp server by executing the following command:
+	
+	% systemctl restart ntp
+	
+	Execute following commands to verify the ntp server is working.
+	
+	$ ntpq -pn
+	$ ntpstat -q (shows time accuracy)
+	
+At this point, the ntp server should be syncing the RPi OS clock to the GPS module disciplined by the PPS.
+
+
+
+Side Notes
+
+(1) Corrupted ntpd
+
+There is an issue where on reboot, the ntpd fails to load and start the ntp server. Somehow the ntpd gets corrupted. Re-installing the ntp software will fix this.
+
+Another option is copy a working ntpd and replace the corrupted one on reboot. ntpd is located in /usr/sbin
+$ sudo cp ntpd /usr/sbin
+	
+(2) timedatectl
+
+timedatectl is another tool which comes pre-installed on the Ubuntu Mate OS for ntp synchronization. However, this is a light
+version of the ntp software and can only synchronize through internet sources. 
