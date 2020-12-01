@@ -404,53 +404,6 @@ int main()
     return 0;
 }
 
-
-void TimeStamp(void)
-{
-    //printf("in trig ts: %d\n",digitalRead(17));
-    //if(StopTimeStamp == 1)
-    //{
-    // if fail to get timestamp, use previous timestamp
-    //char date_time [27];
-    //static volatile hptime_t hptime=0;
-    //static volatile hptime_t *phptime = &hptime;
-    *hptime_p = current_utc_hptime();
-
-    // hptime_t hptime_diff = hptime - global_hptime;
-    // global_hptime = hptime;
-    //ms_hptime2isotimestr(hptime, date_time,1);
-    //printf("%s\n", date_time);
-    // ms_hptime2isotimestr(hptime, date_time,1);
-    // printf("starttime: %s\n", date_time);
-    // fprintf(fp_log, "%s: interrupt: %s\n", GetLogTime(), date_time);
-    // printf("interrupt: %s\n",date_time);
-    // printf("%s\n", GetLogTime());
-    //ms_hptime2isotimestr(hptime - hptime_temp, date_time,1);
-    // printf("TS starttime: %s\n", date_time);
-    //hptime_temp = hptime;
-    //  printf("***************************************");
-
-    ms_hptime2isotimestr(hptime_start-hptime_temp, date_time,1);
-    //fprintf(fp_log, "%s: Triggered timestamp: %s\n", GetLogTime(), date_time);
-    //hptime_temp = hptime_start;
-    printf("%s\n", date_time);
-    //int insert_timestamp_queue_rv = insert_timestamp_queue(q_timestamp, hptime, fp_log);
-    //if(insert_timestamp_queue_rv == -1)
-    //{
-    // What to do if fail to be placed inside of queue ?
-    //fprintf(fp_log, "%s: Error inserting timestamp into queue\n", GetLogTime());
-    //fflush(fp_log);
-    // }
-    //}else
-    //{
-    // flag main program to continue
-    //printf("stopping my interrupt thread\n");
-    //StopTimeStampCont = 1;
-    //}
-
-}
-
-
 void free_timestamp_buffer_samples(void)
 {
     while(timestamp_queue->front_p != NULL)
