@@ -30,7 +30,7 @@ static flag verbose = 1;
 flag overwrite;
 
 
-struct save_mseed_file_params
+struct save2mseedfile_struct
 {
     char slarchive_command[50];
     char save_option[5];
@@ -59,7 +59,7 @@ struct msrecord_struct
     char stream_id_z[50];
 };
 
-struct msrecord_struct_members
+struct msrecord_members_struct
 {
     // MSR Struct variables
     char network[11];
@@ -78,12 +78,19 @@ struct msrecord_struct_members
     char channel_name_ns[4];
     char channel_name_z[4];
 };
-int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log);
-void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members);
 
-int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
+struct serial_port_settings_struct
+{
+    int baudrate;
+    char serial_port[20];
+};
+
+int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log);
+void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_members_struct *msrecord_members);
+
+int process_data(struct msrecord_struct *msrecord, struct msrecord_members_struct *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, struct save_mseed_file_params *save_2_mseed_file);
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, struct save2mseedfile_struct *save_2_mseed_file);
 
 //void Digitizer(char *CheckMount, FILE *fp_log, struct  Q_timestamp *q_timestamp, struct DataQueue *qDataSample, MSRecord *msr_NS, MSRecord *msr_EW, MSRecord *msr_Z,
   //             int BlockLength, int Save2MseedFile, int Save2MseedFile_temp, char *SaveFolderUSBE, char *SaveFolderUSBN, char *SaveFolderUSBZ,
@@ -97,7 +104,7 @@ char *generate_stream_id(MSRecord *msr);
 void extract_datetime(hptime_t hptime, struct datetime *dt);
 
 void run_save_command(struct datetime *starttime_save, struct datetime *endtime_save,
-                      struct save_mseed_file_params *save_2_mseed_file, int save_command_length);
+                      struct save2mseedfile_struct *save_2_mseed_file, int save_command_length);
 
 
 #endif // MSRECORD_H_INCLUDED

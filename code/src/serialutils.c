@@ -114,20 +114,20 @@ char* read_serial(long timeout, FILE *fp)
     return line_data;
 }
 
-int open_serial_port(void)
+int open_serial_port(char *serial_port)
 {
 
-	fd_port = open("/dev/ttyACM0",O_RDWR | O_NOCTTY | O_NDELAY);
+	fd_port = open(serial_port, O_RDWR | O_NOCTTY | O_NDELAY);
 	if(fd_port == -1)						/* Error Checking */
   	return -1;
 
   return 1;
 }
 
-int serial_port_settings (void)
+int set_serial_port_settings (int baudrate)
 {
 
-	int BaudRate = 115200;
+	//int BaudRate = baudrate;
 	/*---------- Setting the Attributes of the serial port using termios structure --------- */
 
 	struct termios SerialPortSettings;	/* Create the structure                          */
@@ -143,9 +143,12 @@ int serial_port_settings (void)
 	SerialPortSettings.c_cc[VMIN] = 0;
 	SerialPortSettings.c_cc[VTIME] = 0;
 
-		/* Setting the Baud rate */
-	cfsetispeed(&SerialPortSettings,B115200); /* Set Read  Speed as 9600                       */
-	cfsetospeed(&SerialPortSettings,B115200); /* Set Write Speed as 9600                       */
+    /* Setting the Baud rate */
+	if (baudrate == 115200)
+	{
+        cfsetispeed(&SerialPortSettings,B115200); /* Set Read  Speed as 9600                       */
+        cfsetospeed(&SerialPortSettings,B115200); /* Set Write Speed as 9600                       */
+    }
 
 	/* 8N1 Mode */
 	SerialPortSettings.c_cflag &= ~PARENB;   /* Disables the Parity Enable bit(PARENB),So No Parity   */
@@ -174,7 +177,7 @@ int serial_port_settings (void)
 		return -1;
 	}
 	else
-    printf(" BaudRate = %d \n  StopBits = 1 \n  Parity   = none\n", BaudRate);
+    printf(" BaudRate = %d \n  StopBits = 1 \n  Parity   = none\n", baudrate);
 
   return 1;
 }

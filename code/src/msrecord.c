@@ -42,7 +42,7 @@ int msrecord_struct_init(struct msrecord_struct *msrecord, FILE *fp_log)
  *      sample rate, encoding, byte order, number of samples, sample type,
  *      sample count
 ***************************************************************************/
-void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members)
+void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_members_struct *msrecord_members)
 {
 
     strcpy(msrecord->msr_NS->network, msrecord_members->network);
@@ -70,9 +70,9 @@ void msrecord_struct_update(struct msrecord_struct *msrecord, struct msrecord_st
     msrecord->msr_NS->sampletype = msrecord->msr_EW->sampletype = msrecord->msr_Z->sampletype = msrecord_members->sampletype;
     msrecord->msr_NS->samplecnt = msrecord->msr_EW->samplecnt = msrecord->msr_Z->samplecnt = msrecord_members->numsamples;
 } /* end of msrecord_struct_update */
-int process_data(struct msrecord_struct *msrecord, struct msrecord_struct_members *msrecord_members,
+int process_data(struct msrecord_struct *msrecord, struct msrecord_members_struct *msrecord_members,
                  pthread_cond_t *cond1, pthread_mutex_t *lock_timestamp, struct data_buffer *d_queue,
-                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, struct save_mseed_file_params *save_2_mseed_file)
+                 struct timestamp_buffer *ts_queue, FILE *fp_log, DLCP *dlconn, struct save2mseedfile_struct *save_2_mseed_file)
 {
     // arrays to store data
     int32_t *sample_block_ns = malloc(sizeof(int32_t) * msrecord_members->numsamples);
@@ -464,7 +464,7 @@ void extract_datetime(hptime_t hptime, struct datetime *dt)
  * Refer to slarchive by Trad Trabant for more information.
 **********************************************************************************************************/
 void run_save_command(struct datetime *starttime_save, struct datetime *endtime_save,
-                      struct save_mseed_file_params *save_2_mseed_file, int save_command_length)
+                      struct save2mseedfile_struct *save_2_mseed_file, int save_command_length)
 {
     char save_command[save_command_length];
     strcpy(save_command, save_2_mseed_file->slarchive_command);

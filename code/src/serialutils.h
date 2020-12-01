@@ -23,8 +23,8 @@ static int fd_port = -1;
 
 int inputAvailable(int fn_io);
 char* read_serial( long timeout, FILE *fp);
-int open_serial_port(void);
-int serial_port_settings (void);
+int open_serial_port(char *serial_port);
+int set_serial_port_settings (int baudrate);
 int flush_serial(void);
 void write_serial(void);
 void close_serial(void);
