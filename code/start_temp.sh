@@ -2,8 +2,8 @@
 
 WORKING_DIR=.
 
-cd /home/arvid/software/Version4
-cp bin/Debug/Version4 .
+cd /home/raspi/code/sdas
+#cp bin/Debug/Version4 . not really necessary
 
 
 if [ ! -e "${WORKING_DIR}/log" ]; then
@@ -13,10 +13,10 @@ fi
 
 echo "Starting main program..."
 
-nohup ./Version4 &
+nohup ./sdas &
 PID=$!
-echo ${PID} > ${WORKING_DIR}/log/Version4.pid
-python3 /home/arvid/software/scripts/monitor_system/system_monitor.py ${PID} 3600 /home/arvid/software/Version4/log &
+echo ${PID} > ${WORKING_DIR}/log/sdas.pid
+#python3 /home/raspi/sdas/scripts/monitor_system/system_monitor.py ${PID} 3600 /home/raspi/sdas/code/log &
 
 
 sleep 1
