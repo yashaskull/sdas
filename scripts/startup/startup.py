@@ -14,7 +14,7 @@ def startup_routine():
 	# start ntp server
 	startup_log.write("Attempting to start ntp server...\n")
 	os.system("rm /usr/sbin/ntpd")
-	os.system("cp /home/arvid/software/ntp/ntpd /usr/sbin/ntpd")
+	os.system("cp /home/raspi/sdas/ntp/ntpd /usr/sbin/ntpd")
 	proc = Popen("service ntp restart", shell=True,stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	exitcode=proc.returncode
@@ -31,7 +31,7 @@ def startup_routine():
 	# start ring buffer
 	startup_log.write("Attempting to start ringserver...\n")
 	startup_log.flush()
-	proc = Popen("/home/arvid/software/ringserver_2017.052/start_ringserver.sh", shell=True, stdout=PIPE, stderr=PIPE)
+	proc = Popen("/home/raspi/sdas/code/ringserver/start_ringserver.sh", shell=True, stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	exitcode=proc.returncode
 	#print(exitcode)
@@ -50,7 +50,7 @@ def startup_routine():
 	startup_log.write("Attempting to compile arduino code...\n")
 	startup_log.flush()
 	Popen("arduino-cli core update-index", shell=True,stdout=PIPE,stderr=PIPE)
-	proc = Popen("arduino-cli compile --fqbn arduino:avr:mega /home/arvid/software/arduino/3_channel", shell=True,stdout=PIPE, stderr=PIPE)
+	proc = Popen("arduino-cli compile --fqbn arduino:avr:mega /home/raspi/sdas/arduino/3_channel", shell=True,stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	if (proc.returncode != 0):
 		startup_log.write("out: "+str(out)+"\n")			
@@ -112,7 +112,7 @@ def startup_routine():
 	# begin acquisition system	 
 	startup_log.write("Beginning main program at "+str(datetime.datetime.now())+" UTC\n")
 	startup_log.flush()
-	proc = Popen("/home/arvid/software/Version4/start_temp.sh", shell=True)
+	proc = Popen("/home/raspi/sdas/code/start_temp.sh", shell=True)
 	out,err = proc.communicate()
 	if (proc.returncode != 0):
 		startup_log.write("err: "+str(err)+" \n")
@@ -135,7 +135,7 @@ def run_arduino():
 	#print(out)
 	strs = str(out)
 	
-	proc = Popen("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega /home/arvid/software/arduino/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
+	proc = Popen("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega /home/raspi/sdas/arduino/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	return [out, err, proc.returncode, strs]
 	
@@ -182,7 +182,7 @@ def ntp_status():
 if __name__ == '__main__':
 	
 	# log file to log output of startup commands
-	startup_log = open("/home/arvid/software/scripts/startup/startup_log.log", "w+")
+	startup_log = open("/home/raspi/sdas/scripts/startup/startup_log.log", "w+")
 	
 	# beging startup routine
 	rv = startup_routine()
