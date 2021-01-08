@@ -3,7 +3,7 @@
 WORKING_DIR=.
 #cd $(WORKING_DIR $0)
 
-cd /home/arvid/Desktop/ringserver_2017.052
+cd /home/raspi/sdas/code/ringserver
 
 
 #echo $WORKING_DIR
