@@ -36,6 +36,7 @@ struct save2mseedfile_struct
     char save_option[5];
     char sl_port_host[50];
     char save_dir[50];
+    char usb_location[50];
     int save_check;
 };
 
