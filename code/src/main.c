@@ -17,6 +17,8 @@
 #include <pigpio.h>
 #include <libconfig.h> // for creating config files. sudo apt-get install libconfig-dev.. linker: -lconfig
 #include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 /* Libraries */
 #include <libmseed.h>
@@ -78,8 +80,11 @@ int StopTimeStampCont = 0;
 FILE *fp_log;
 
 // usb mount command
-char *mount_command = "mount | grep -q ";
+char *check_mount_command = "mount | grep -q ";// check to see if device is mounted
 char check_mount[70];
+
+char *mount_command = "mount"; // used for mounting device
+char mount_[70];
 
 // datalink connection definition
 DLCP *dlconn;
@@ -108,8 +113,9 @@ struct serial_port_settings_struct serial_port_settings;
 
 /* Main Program */
 int main()
-{
-    // open log file
+{	
+	
+	// open log file
     fp_log = fopen("digitizer.log", "w");
     if (fp_log == NULL)
     {
@@ -350,15 +356,11 @@ int main()
     //fflush(fp_log);
     fprintf(fp_log, "%s: Thread for reading serial created.!\n", get_log_time());
     fflush(fp_log);
-    //printf("Waiting on condition variable cond1\n");
-    //write_serial();
-    //pthread_cond_wait(&cond1, &lock_timestamp);
-    //int numsaples = 200;
 
     // add a check if save location is mounted
     // if not, set save check to 0
-
-    strcpy(check_mount, mount_command);
+	////////////////////////////////////////////////
+    strcpy(check_mount, check_mount_command);
     strcat(check_mount, save_2_mseed_file.save_dir);
     // drive not mounted
     if (save_2_mseed_file.save_check == 1 && system(check_mount) != 0)
@@ -566,6 +568,14 @@ int parse_config_file()
         return -1;
     }
 
+	// usb location
+    if (config_lookup_string(cf, "save2mseedparams.usblocation", &temp))
+        strcpy(save_2_mseed_file.usb_location, temp);
+    else
+    {
+        fprintf(fp_log, "%s: USB location is not defined.\n", get_log_time());
+        return -1;
+    }
     // save 2 mseed file flag (or save check)
     int temp_save_check;
     if (config_lookup_int(cf, "save2mseedparams.savecheck", &temp_save_check))
@@ -575,6 +585,8 @@ int parse_config_file()
         fprintf(fp_log, "%s: save check is not defined.\n", get_log_time());
         return -1;
     }
+    
+   
 
     /*
      * MSR structure variables
