@@ -114,6 +114,55 @@ struct serial_port_settings_struct serial_port_settings;
 /* Main Program */
 int main()
 {	
+   	/**
+	*hptime_p = current_utc_hptime();// time for mseed records
+	ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+    printf("%lld\n", hptime_start);
+    printf("%s\n", date_time);
+    
+    struct timeval start, end;
+	gettimeofday(&start, NULL);
+    
+    struct datetime dt;
+    sscanf(date_time, "%4s-%2s-%2sT%2s:%2s:%2s.%6s", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, dt.subsec);
+	int temp_ = atoi(dt.subsec);
+	temp_ = temp_/1000;
+	printf("%d\n", temp_);
+	
+	int ceil_ = ceil((double)temp_/5) * 5;
+	int floor_ = floor((double)temp_/5) * 5;
+	
+	printf("%d   %d\n", ceil_, floor_);
+	
+	int ciel_diff = abs(temp_ - ceil_);
+	int floor_diff = abs(temp_ - floor_);
+	
+	printf("%d   %d\n", ciel_diff, floor_diff);
+	
+	if (ciel_diff < floor_diff)
+	{
+		ceil_ = ceil_ * 1000;
+		int ret = snprintf(date_time, 27, "%4s-%2s-%2sT%2s:%2s:%2s.%06d", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, ceil_);
+		printf("%s\n", date_time);
+	}
+	else if (floor_diff < ciel_diff)
+	{
+		floor_ = floor_ * 1000;
+		int ret = snprintf(date_time, 27, "%4s-%2s-%2sT%2s:%2s:%2s.%06d", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, floor_);
+		printf("%s\n", date_time);
+	}
+	else// same
+	{
+		;
+	}
+	
+	gettimeofday(&end, NULL);
+
+	long seconds = (end.tv_sec - start.tv_sec);
+	long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
+
+	//printf("micros %ld\n", micros);
+	return 1;*/
 	
 	// open log file
     fp_log = fopen("digitizer.log", "w");
@@ -461,9 +510,14 @@ void *read_serial_buffer(void *arg)
             // time stored in global variable hptime_start
             *hptime_p = current_utc_hptime();// time for mseed records
             //printf("%lld\n", hptime_start);
-            ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+           // ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
             //hptime_temp = hptime_start;
-            printf("%s\n", date_time);
+            //printf("%s    ", date_time);
+            
+            hptime_start = starttime_correction(hptime_start, 0.005);
+            //ms_hptime2isotimestr(hptime_start, date_time, 1);
+            //printf("%s\n", date_time);
+            
             int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
             if(insert_timestamp_queue_rv == -1)
             {
