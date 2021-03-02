@@ -30,6 +30,7 @@ char *RemoveChannelIdentifier(char *chanData);
 hptime_t current_utc_hptime(void);
 void current_utc_time(struct timespec *ts);
 hptime_t timespec2hptime(struct timespec* ts);
+hptime_t starttime_correction(hptime_t starttime, double sample_period);
 
 // ringserver functions
 int TotalStreams(DLCP *dlconn, FILE *fp);

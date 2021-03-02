@@ -315,3 +315,47 @@ int MaximumPackets(DLCP *dlconn, FILE *fp)
 }
 
 
+hptime_t starttime_correction(hptime_t starttime, double sample_period)// sample period in s
+{
+
+	sample_period = sample_period * 1000; // convert sample period to ms
+    int subsec = starttime%1000000;
+    subsec = subsec/1000;// extract ms from subsec
+    //printf("subsec: %d\n", subsec);
+    
+    int ceil_ = ceil((double)subsec/sample_period) * sample_period;
+	int floor_ = floor((double)subsec/sample_period) * sample_period;
+	
+	//printf("ceil: %d   floor: %d\n", ceil_, floor_);
+	
+	int ceil_diff = abs(subsec - ceil_);
+	int floor_diff = abs(subsec - floor_);
+	
+	//printf("ceil_diff: %d   floor_diff: %d\n", ceil_diff, floor_diff);
+	
+	if (ceil_diff < floor_diff)
+	{
+		ceil_diff = ceil_diff * 1000;
+		return(starttime + ceil_diff);
+		
+		//ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+		//printf("%lld\n", hptime_start);
+		//printf("%s\n", date_time);
+	}
+	else if (floor_diff < ceil_diff)
+	{
+		floor_diff = floor_diff * 1000;
+		return(starttime - floor_diff);
+		//ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+		//printf("%lld\n", hptime_start);
+		//printf("%s\n", date_time);
+	}
+	else// same
+	{
+		return starttime;
+		//ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+		//printf("%lld\n", hptime_start);
+		//printf("%s\n", date_time);
+	}
+	
+}
