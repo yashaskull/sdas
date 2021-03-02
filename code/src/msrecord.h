@@ -48,6 +48,7 @@ struct datetime
     char hour[3];
     char mins[3];
     char sec[3];
+    char subsec[6];
 };
 struct msrecord_struct
 {
