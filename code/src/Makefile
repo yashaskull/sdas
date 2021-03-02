@@ -7,7 +7,7 @@ GCC = gcc
 GCCFLAGS = -O2 -Wall -I../libdali -I../ezxml -I../libmseed
 
 LDFLAGS = -L../libdali -L../ezxml -L../libmseed
-LDLIBS  = -ldali -lezxml -lmseed -lwiringPi -lpthread -lconfig
+LDLIBS  = -ldali -lezxml -lmseed -lwiringPi -lpthread -lconfig -lm
 
 # For SunOS/Solaris uncomment the following line
 #LDLIBS = -ldali -lezxml -lmseed -lsocket -lnsl -lrt
