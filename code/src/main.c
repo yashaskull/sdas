@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
 
 /* Libraries */
 #include <libmseed.h>
@@ -114,55 +115,6 @@ struct serial_port_settings_struct serial_port_settings;
 /* Main Program */
 int main()
 {	
-   	/**
-	*hptime_p = current_utc_hptime();// time for mseed records
-	ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
-    printf("%lld\n", hptime_start);
-    printf("%s\n", date_time);
-    
-    struct timeval start, end;
-	gettimeofday(&start, NULL);
-    
-    struct datetime dt;
-    sscanf(date_time, "%4s-%2s-%2sT%2s:%2s:%2s.%6s", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, dt.subsec);
-	int temp_ = atoi(dt.subsec);
-	temp_ = temp_/1000;
-	printf("%d\n", temp_);
-	
-	int ceil_ = ceil((double)temp_/5) * 5;
-	int floor_ = floor((double)temp_/5) * 5;
-	
-	printf("%d   %d\n", ceil_, floor_);
-	
-	int ciel_diff = abs(temp_ - ceil_);
-	int floor_diff = abs(temp_ - floor_);
-	
-	printf("%d   %d\n", ciel_diff, floor_diff);
-	
-	if (ciel_diff < floor_diff)
-	{
-		ceil_ = ceil_ * 1000;
-		int ret = snprintf(date_time, 27, "%4s-%2s-%2sT%2s:%2s:%2s.%06d", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, ceil_);
-		printf("%s\n", date_time);
-	}
-	else if (floor_diff < ciel_diff)
-	{
-		floor_ = floor_ * 1000;
-		int ret = snprintf(date_time, 27, "%4s-%2s-%2sT%2s:%2s:%2s.%06d", dt.year, dt.month, dt.day, dt.hour, dt.mins, dt.sec, floor_);
-		printf("%s\n", date_time);
-	}
-	else// same
-	{
-		;
-	}
-	
-	gettimeofday(&end, NULL);
-
-	long seconds = (end.tv_sec - start.tv_sec);
-	long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
-
-	//printf("micros %ld\n", micros);
-	return 1;*/
 	
 	// open log file
     fp_log = fopen("digitizer.log", "w");
@@ -200,6 +152,7 @@ int main()
         return -1;
     }
     fprintf(fp_log, "%s: Connected to DataLink server @ localhost:16000!\n", get_log_time());
+    fprintf(fp_log, "\n");
 
     // mseed record structure initialization
     if (msrecord_struct_init(&msrecord, fp_log) == -1)
@@ -217,6 +170,7 @@ int main()
     msrecord_struct_update(&msrecord, &msrecord_members);
     fprintf(fp_log, "%s: MSR initalized\n", get_log_time());
     //MaximumPackets(dlconn, fp_log);
+	fprintf(fp_log, "\n");
 
     char *temp = generate_stream_id(msrecord.msr_NS);
     strcpy(msrecord.stream_id_ns, temp);
@@ -289,8 +243,8 @@ int main()
         return -1;
     }
     fprintf(fp_log, "%s: Timestamp queue initialized!\n", get_log_time());
-    fprintf(fp_log,"gpio 17: %d\n",digitalRead(17));
-
+    fprintf(fp_log, "\n");
+    
     /* Open serial port */
     if (open_serial_port(serial_port_settings.serial_port) == -1)
     {
@@ -403,12 +357,64 @@ int main()
         return -1;
     }
     //fflush(fp_log);
-    fprintf(fp_log, "%s: Thread for reading serial created.!\n", get_log_time());
+    fprintf(fp_log, "%s: Thread for reading serial created!\n", get_log_time());
+    fprintf(fp_log, "\n");
     fflush(fp_log);
 
+	
+	// Saving data to mseed file setup
+	if (save_2_mseed_file.save_check)
+	{
+		fprintf(fp_log, "%s: Saving data to mseed files option selected. Setting up save directories....\n", get_log_time());
+		// create save directory
+		fprintf(fp_log, "%s: Creating save directory: %s\n", get_log_time(), save_2_mseed_file.save_dir);
+		if (mkdir(save_2_mseed_file.save_dir, 0777))
+		{
+			if (errno == EEXIST)
+				fprintf(fp_log, "%s: Save directory %s exist.\n",get_log_time(), save_2_mseed_file.save_dir);
+			else
+			{
+				fprintf(fp_log, "%s: Error: %s\n",get_log_time(), strerror(errno));
+				fprintf(fp_log, "%s: Error  creating save directory %s. Data will only be stored in ring buffer.\n", get_log_time(), save_2_mseed_file.save_dir);
+				save_2_mseed_file.save_check = 0;
+			}
+		}
+		else
+			fprintf(fp_log, "%s: Save directory %s created!\n", get_log_time(), save_2_mseed_file.save_dir);
+	
+		
+		// mount usb drive to save directory
+		if (save_2_mseed_file.save_check == 1)
+		{
+			fprintf(fp_log, "%s: Attempting to mount usb drive to save directory.\n", get_log_time());
+			if (mount(save_2_mseed_file.usb_location, save_2_mseed_file.save_dir, "ext4", MS_NOATIME, NULL))
+			{
+				if (errno == EBUSY)
+				{
+					fprintf(fp_log, "%s: Mountpoint busy, possibly already mounted.\n", get_log_time());
+					fprintf(fp_log, "%s: Data will be stored on a storage device located at %s.\n", get_log_time(), save_2_mseed_file.save_dir);
+				}
+				else
+				{
+					fprintf(fp_log, "%s: Mount error: %s\n",get_log_time(), strerror(errno));
+					fprintf(fp_log, "%s: Error mounting data storage device to %s. Data will only be stored in ring buffer.\n", get_log_time(), save_2_mseed_file.save_dir);
+					save_2_mseed_file.save_check = 0;
+				}
+			}
+			else
+			{
+				fprintf(fp_log, "%s: Mount successful! Data will be stored on a storage device located at %s.\n", get_log_time(), save_2_mseed_file.save_dir);
+			}	
+		}
+	}
+	fprintf(fp_log, "\n");
+
+	///////////////////////////////////////////////////////////////////
     // add a check if save location is mounted
     // if not, set save check to 0
 	////////////////////////////////////////////////
+   
+	/**
     strcpy(check_mount, check_mount_command);
     strcat(check_mount, save_2_mseed_file.save_dir);
     // drive not mounted
@@ -420,7 +426,7 @@ int main()
 
     if (save_2_mseed_file.save_check)
         fprintf(fp_log, "%s: Saving data to mseed files option selected. Data will be stored at: %s\n", get_log_time(), save_2_mseed_file.save_dir);
-
+	*/
     //write_serial();
     //int da;
     //scanf("%d\n", &da);
