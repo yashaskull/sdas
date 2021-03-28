@@ -106,6 +106,8 @@ At this point, the ntp server on the RPi is ready to be synchronzied with the GP
 	
 At this point, the ntp server should be syncing the RPi OS clock to the GPS module disciplined by the PPS.
 
+If gpsd is failing to start on boot. Run the following command.
+sudo ln -s /lib/systemd/system/gpsd.service /etc/systemd/system/multi-user.target.wants/
 
 
 Side Notes
