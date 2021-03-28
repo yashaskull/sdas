@@ -29,6 +29,8 @@ Procedure:
 	$ sudo nano /boot/cmdline.txt
 	Change to: dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles usbhid.mousepoll=0
 	
+	basically remove console=serial0,115200 # this will conflict with gps and won't work.
+	
 	Exit and save
 	
 3. 	Edit config.txt (enabling UART):
