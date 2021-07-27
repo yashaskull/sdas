@@ -1,0 +1,21 @@
+Tue Jul 27 16:29:37 2021 : Connected to DataLink server @ localhost:16000!
+
+Tue Jul 27 16:29:37 2021 : Memory spaced allocated for MSR structure.
+Tue Jul 27 16:29:37 2021 : MSR initalized
+
+Tue Jul 27 16:29:37 2021 : Data buffer created and initialized
+Tue Jul 27 16:29:37 2021 : Timestamp queue created
+Tue Jul 27 16:29:37 2021 : Timestamp queue initialized!
+
+Tue Jul 27 16:29:37 2021 : Serial port opened successfully!
+Tue Jul 27 16:29:37 2021 : Serial port opened and settings configured!.
+Tue Jul 27 16:29:40 2021 : input/output serial lines flushed!
+Tue Jul 27 16:29:41 2021 : Thread for reading serial created!
+
+Tue Jul 27 16:29:41 2021 : Saving data to mseed files option selected. Setting up save directories....
+Tue Jul 27 16:29:41 2021 : Creating save directory: /media/raspi/DATA
+Tue Jul 27 16:29:41 2021 : Error: No such file or directory
+Tue Jul 27 16:29:41 2021 : Error  creating save directory /media/raspi/DATA. Data will only be stored in ring buffer.
+
+Tue Jul 27 16:29:41 2021 : Beginning acquisition system!
+Tue Jul 27 16:30:24 2021 : Program Exiting

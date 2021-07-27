@@ -23,18 +23,18 @@ ARFLAGS		=	crvs
 ARCHFLAGS	=	
 CC		=	gcc
 CFLAGS		=	$(OPTIM) $(ARCHFLAGS) -Wall   -D_THREAD_SAFE -D_REENTRANT
-CP		=	/bin/cp
+CP		=	/usr/bin/cp
 DSO		=	:
 DSOFLAGS	=	
 LDFLAGS		=	$(OPTIM) $(ARCHFLAGS) 
 INSTALL		=	/usr/bin/install -c
 LIBMXML		=	libmxml.a
 LIBS		=	 -lpthread
-LN		=	/bin/ln -s
-MKDIR		=	/bin/mkdir
+LN		=	/usr/bin/ln -s
+MKDIR		=	/usr/bin/mkdir
 OPTIM		=	-Os -g
 RANLIB		=	ranlib
-RM		=	/bin/rm -f
+RM		=	/usr/bin/rm -f
 SHELL		=	/bin/sh
 
 

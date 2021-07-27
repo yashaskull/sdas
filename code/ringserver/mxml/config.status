@@ -434,7 +434,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/home/arvid/projects/sdas/code/ringserver/mxml'
+ac_pwd='/home/pi/projects/sdas/code/ringserver/mxml'
 srcdir='.'
 INSTALL='/usr/bin/install -c'
 test -n "$AWK" || AWK=awk
@@ -614,14 +614,14 @@ S["DSOFLAGS"]=""
 S["DSO"]=":"
 S["PTHREAD_LIBS"]="-lpthread"
 S["PTHREAD_FLAGS"]="-D_THREAD_SAFE -D_REENTRANT"
-S["EGREP"]="/bin/grep -E"
-S["GREP"]="/bin/grep"
+S["EGREP"]="/usr/bin/grep -E"
+S["GREP"]="/usr/bin/grep"
 S["CPP"]="gcc -E"
 S["ARFLAGS"]="crvs"
-S["RM"]="/bin/rm"
-S["MKDIR"]="/bin/mkdir"
-S["LN"]="/bin/ln"
-S["CP"]="/bin/cp"
+S["RM"]="/usr/bin/rm"
+S["MKDIR"]="/usr/bin/mkdir"
+S["LN"]="/usr/bin/ln"
+S["CP"]="/usr/bin/cp"
 S["AR"]="/usr/bin/ar"
 S["RANLIB"]="ranlib"
 S["INSTALL_DATA"]="${INSTALL} -m 644"
