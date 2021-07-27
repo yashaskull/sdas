@@ -2,7 +2,7 @@
 //#include "SPI.h"
 
 #define PGA 1
-#define VREF1 5
+#define VREF1 3.290
 #define VREF2 2.048
 
 #define VFSR1 VREF1/PGA
@@ -117,7 +117,7 @@ void setup() {
   digitalWrite(ADS1220_CS_PIN_1, HIGH);
   pinMode(ADS1220_DRDY_PIN_1, INPUT);
   delay(5);
-
+  
   pinMode(ADS1220_CS_PIN_2, OUTPUT);
   digitalWrite(ADS1220_CS_PIN_2, HIGH);
   pinMode(ADS1220_DRDY_PIN_2, INPUT);
@@ -131,7 +131,7 @@ void setup() {
   // need to set pin 53 to OUTPUT for SPI communication
   pinMode(53, OUTPUT);// need to change
 
-  pinMode(22, OUTPUT);
+ // pinMode(22, OUTPUT);
   // count down timer and digital pin interrupt timer
   ////////////////////////////////////
   //setupTimer();
@@ -141,12 +141,12 @@ void setup() {
 
 
   
-ADS1220.begin();
+  ADS1220.begin();
  // ADS1220.powerDown();
     //digitalWrite(22, HIGH);
 
   //pinsInput();/////////////////////////////////////////////////
-  Serial.println("*");
+  //Serial.println("*");
   //setupTimer();
  // starttime = micros();
 }
@@ -155,29 +155,29 @@ void loop()
   if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW  && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
   {
   
-    if (sample_counter == 2)// 200 SPS
+   // if (sample_counter == 2)// 200 SPS
+     // readData(true);
+    //else
+    //{
       readData(true);
-    else
-    {
-      readData(false);
-      sample_counter++;
-    }
+      //sample_counter++;
+    //}
     //readData(true);
   }
   
-  if (counter == 200)
-  {
-    Serial.println("*");//////////////////////////////////////////
-    counter = 0;
-  }
+ // if (counter == 200)
+  //{
+    //Serial.println("*");//////////////////////////////////////////
+    //counter = 0;
+ // }
   
 }// end loop
 
 void readData(bool print2Serial)
 {  
   SPI_RX_Buff_Ptr_1 = ADS1220.Read_Data_1();
-  SPI_RX_Buff_Ptr_2 = ADS1220.Read_Data_2();
-  SPI_RX_Buff_Ptr_3 = ADS1220.Read_Data_3();
+ SPI_RX_Buff_Ptr_2 = ADS1220.Read_Data_2();
+ SPI_RX_Buff_Ptr_3 = ADS1220.Read_Data_3();
 
   MSB = SPI_RX_Buff_Ptr_1[0];
   data = SPI_RX_Buff_Ptr_1[1];
@@ -203,17 +203,21 @@ void readData(bool print2Serial)
   //counter ++;
   if (print2Serial == true) 
   {
-    counter++;
-    sample_counter = 0;
+   // counter++;
+    //sample_counter = 0;
   
           //Serial.println(bit24_N);
-/**
+    /**
     if (bit24_N >= 8388608 && bit24_N <= 16777215)
     {
       Serial.print((16777215 - bit24_N)*-1);
     }
     else
+    {
       Serial.print(bit24_N);
+      Serial.print("  ");
+     // Serial.println(((float)(bit24_N * VFSR2) / (float)FSR), 5);
+    }
 
    Serial.print(" ");
      
@@ -224,8 +228,8 @@ void readData(bool print2Serial)
     }
     else
       Serial.print(bit24_E);
-
-    Serial.print(" ");
+ 
+    Serial.print("  ");
 
 
     if (bit24_Z >= 8388608 && bit24_Z <= 16777215)
@@ -301,5 +305,3 @@ void sendToPython(float *data)
   byte *byteData = (byte*)data;
   Serial.write(byteData, 4);
 }
-
-
