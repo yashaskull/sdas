@@ -427,9 +427,9 @@ int main()
     if (save_2_mseed_file.save_check)
         fprintf(fp_log, "%s: Saving data to mseed files option selected. Data will be stored at: %s\n", get_log_time(), save_2_mseed_file.save_dir);
 	*/
-    //write_serial();
-    //int da;
-    //scanf("%d\n", &da);
+   // write_serial();
+   // int da;
+    //scanf("waiting %d\n", &da);
     // beging acuqisition system
     process_data(&msrecord, &msrecord_members, &cond1, &lock_timestamp, data_queue, timestamp_queue, fp_log, dlconn,
                  &save_2_mseed_file);
@@ -497,6 +497,8 @@ void free_data_buffer_samples(void)
 
 void *read_serial_buffer(void *arg)
 {
+    int sample_counter = 0;
+    
     while(stop_read_serial_buffer_thread == 1)
     {
         //if (stop_read_serial_buffer_thread == 1)
@@ -507,37 +509,40 @@ void *read_serial_buffer(void *arg)
             // Arduino still initializing
             continue;
         }
-        //printf("%s\n", serial_data);
-        //printf("%s\n", serial_data);
-        if (strcmp(serial_data, "*") == 0)
-        {
-
+        //if (strcmp(serial_data, "*") == 0)
+        //{
+    
             //pthread_mutex_lock(&lock_timestamp);
             // time stored in global variable hptime_start
-            *hptime_p = current_utc_hptime();// time for mseed records
+          //  *hptime_p = current_utc_hptime();// time for mseed records
             //printf("%lld\n", hptime_start);
-           // ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+            //ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
             //hptime_temp = hptime_start;
             //printf("%s    ", date_time);
             
-            hptime_start = starttime_correction(hptime_start, 0.005);
-            //ms_hptime2isotimestr(hptime_start, date_time, 1);
-            //printf("%s\n", date_time);
-            
-            int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
-            if(insert_timestamp_queue_rv == -1)
-            {
-                // What to do if fail to be placed inside of queue ?
-                fprintf(fp_log, "%s: Error inserting timestamp into queue\n", get_log_time());
-                fflush(fp_log);
-                exit(0);
-            }
             //pthread_cond_signal(&cond1);
             //pthread_mutex_unlock(&lock_timestamp);
-        }
-        //printf("%s\n", serial_data);
-        else
+       // }
+        else // data sample to be read
         {
+            if (sample_counter == 0 || sample_counter == 200)
+            {
+                *hptime_p = current_utc_hptime();// time for mseed records
+                hptime_start = starttime_correction(hptime_start, 0.005);
+                int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
+                if(insert_timestamp_queue_rv == -1)
+                {
+                    // What to do if fail to be placed inside of queue ?
+                    fprintf(fp_log, "%s: Error inserting timestamp into queue\n", get_log_time());
+                    fflush(fp_log);
+                    exit(0);
+                }
+                //ms_hptime2isotimestr(hptime_start, date_time, 1);
+                //printf("%s\n", date_time);
+                
+                sample_counter = 0;
+            }
+            
             if (insert_data_buffer(data_queue, serial_data, fp_log) == -1)
             {
                 fprintf(fp_log, "%s: Failed to allocate memory to store sample in buffer. Potential memory issue. Fix and reboot program.\n", get_log_time());
@@ -545,9 +550,8 @@ void *read_serial_buffer(void *arg)
                 //printf("failed to insert into buffer\n");
                 exit(0); // hard kill program. Need something better.
             }
+            sample_counter ++; //update sample counter after inserting sample into queue
         }
-
-        //}
     }
     return NULL;
 }
