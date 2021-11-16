@@ -21,6 +21,10 @@
 #include <libslink.h>
 
 #include "dsarchive.h"
+////////////////////////
+#include <errno.h>
+#include <sys/mount.h>
+///////////////////////
 
 #define PACKAGE   "slarchive"
 #define VERSION   "2.2"
@@ -49,9 +53,20 @@ static char *statefile    = 0;	 /* state file for saving/restoring stream states
 static SLCD *slconn;	         /* connection parameters */
 static DSArchive *dsarchive;
 
+/***************************************ADDED*****************************************/
+const char *save_dir = NULL; // specify directory where files will be stored
+char *slconn_host = "192.168.254.206:18000"; // specify host and port of seedlink server
+/*************************************************************************************/
+
 int
 main (int argc, char **argv)
 {
+  /**********************************ADDED********************************/
+  const char *source = argv[2]; // source of usb drive
+  const char *target = argv[3]; // save directory
+  const char *file_system_type = argv[4]; // filesystem to mount usb drive
+  /***********************************************************************/
+  
   SLpacket *slpack;
   int seqnum;
   int ptype;
@@ -76,6 +91,31 @@ main (int argc, char **argv)
 
   /* Allocate and initialize a new connection description */
   slconn = sl_newslcd();
+  
+  /*****************STORAGE DEVICE MOUNT ROUTINE**********************/
+  if (mount(source, target, file_system_type, MS_NOATIME, NULL))
+  {
+    // already mounted
+    if (errno == EBUSY)
+    {
+	    printf("Storage device already mounted\n");
+    }
+    // mount error
+    else
+    {
+	    printf("Error mounting storage device. Exiting save routine.\n");
+	    exit(0);
+    }
+  }
+  // successfully mounted
+  else
+  {
+	  printf("Storage device mounted!\n");
+  }
+  /************************************************************************/
+  // Storage device was mounted successfully so we can go ahead and save
+  
+  save_dir = target;////
 
   /* Process given parameters (command line and parameter file) */
   if (parameter_proc (argc, argv) < 0)
@@ -216,7 +256,7 @@ parameter_proc (int argcount, char **argvec)
     error++;
 
   /* Process all command line arguments */
-  for (optind = 1; optind < argcount; optind++)
+  /**for (optind = 1; optind < argcount; optind++)
     {
       if (strcmp (argvec[optind], "-V") == 0)
         {
@@ -350,8 +390,17 @@ parameter_proc (int argcount, char **argvec)
 	  fprintf (stderr, "Unknown option: %s\n", argvec[optind]);
 	  exit (1);
 	}
-    }
+    }*/
 
+  /////////////////////////////////////////
+  timewin = argvec[1];// time window
+  // update slconn with host and port
+  slconn->sladdr = slconn_host;
+  
+  // add archive (save directory)
+  addarchive(save_dir, CSSLAYOUT);
+  /////////////////////////////////////////
+  
   /* Make sure a server was specified */
   if ( ! slconn->sladdr )
     {
