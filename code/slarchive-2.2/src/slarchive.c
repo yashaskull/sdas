@@ -24,6 +24,7 @@
 ////////////////////////
 #include <errno.h>
 #include <sys/mount.h>
+#include <fcntl.h>
 ///////////////////////
 
 #define PACKAGE   "slarchive"
@@ -56,6 +57,8 @@ static DSArchive *dsarchive;
 /***************************************ADDED*****************************************/
 const char *save_dir = NULL; // specify directory where files will be stored
 char *slconn_host = "192.168.254.206:18000"; // specify host and port of seedlink server
+char *save2mseed_log = "../log/save2mseed.log";
+FILE *fp_log;
 /*************************************************************************************/
 
 int
@@ -65,7 +68,16 @@ main (int argc, char **argv)
   const char *source = argv[2]; // source of usb drive
   const char *target = argv[3]; // save directory
   const char *file_system_type = argv[4]; // filesystem to mount usb drive
+  
+  fp_log = fopen(save2mseed_log, "w");
+  if (fp_log == NULL)
+  {
+    printf("Error opening log file\n");
+    return -1;
+  }
   /***********************************************************************/
+  fprintf(fp_log, "Beginning save routine\n");
+  fprintf(fp_log, "Time window: %s\n", argv[1]);
   
   SLpacket *slpack;
   int seqnum;
@@ -92,25 +104,30 @@ main (int argc, char **argv)
   /* Allocate and initialize a new connection description */
   slconn = sl_newslcd();
   
+  fprintf(fp_log, "Mounting storage device.\n");
+  
   /*****************STORAGE DEVICE MOUNT ROUTINE**********************/
   if (mount(source, target, file_system_type, MS_NOATIME, NULL))
   {
     // already mounted
     if (errno == EBUSY)
     {
-	    printf("Storage device already mounted\n");
+      fprintf(fp_log, "Storage device already mounted.\n");
+      //printf("Storage device already mounted\n");
     }
     // mount error
     else
     {
-	    printf("Error mounting storage device. Exiting save routine.\n");
-	    exit(0);
+      fprintf(fp_log, "Error mounting storage device. Exiting save routine.\n");
+      //printf("Error mounting storage device. Exiting save routine.\n");
+      //exit(0);
     }
   }
   // successfully mounted
   else
   {
-	  printf("Storage device mounted!\n");
+    fprintf(fp_log, "Storage device mounted!\n");
+    //printf("Storage device mounted!\n");
   }
   /************************************************************************/
   // Storage device was mounted successfully so we can go ahead and save
@@ -159,6 +176,27 @@ main (int argc, char **argv)
   if (statefile)
     sl_savestate (slconn, statefile);
 
+  fprintf(fp_log, "Unmounting storage device.\n");
+  /*********************UNMOUNT STORAGE DEVICE ROUTINE************************/
+  if (umount(target))
+  {
+    if (errno == EBUSY)
+      fprintf(fp_log, "Storage device could not be unmounted.\n");
+      //printf("Storage device could not be unmounted because it is busy.\n");
+    else
+      fprintf(fp_log, "Error unmounting storage device.\n");
+      //printf("Error unmounting storage device.\n");
+  }
+  else
+      fprintf(fp_log, "Error unmounting storage device.\n");
+      //printf("Storage device unmounted successfully.\n");
+  /***************************************************************************/
+  
+  fprintf(fp_log, "Exiting save routine.\n");
+  fprintf(fp_log, "\n");
+  fprintf(fp_log, "\n");
+  
+  fclose(fp_log);
   return 0;
 }  /* End of main() */
 
