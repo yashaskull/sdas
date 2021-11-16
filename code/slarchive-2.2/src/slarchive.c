@@ -56,7 +56,7 @@ static DSArchive *dsarchive;
 
 /***************************************ADDED*****************************************/
 const char *save_dir = NULL; // specify directory where files will be stored
-char *slconn_host = "192.168.254.206:18000"; // specify host and port of seedlink server
+char *slconn_host = "192.168.254.207:18000"; // specify host and port of seedlink server
 char *save2mseed_log = "../log/save2mseed.log";
 FILE *fp_log;
 /*************************************************************************************/
@@ -188,7 +188,7 @@ main (int argc, char **argv)
       //printf("Error unmounting storage device.\n");
   }
   else
-      fprintf(fp_log, "Error unmounting storage device.\n");
+      fprintf(fp_log, "Storage device unmounted successfully.\n");
       //printf("Storage device unmounted successfully.\n");
   /***************************************************************************/
   
