@@ -8,9 +8,34 @@ Attempting to compile arduino code...
 Arduino code compiled!
 
 Attempting to upload arduino code...
-b'/home/arvid\n'
+b'/root\n'
 Arduino code uploaded!
 
-Waiting for time synchronization to be correct within 50 ms before beginning program.
-Beginning main program at 2019-11-13 20:20:33.484855 UTC
-Main program started!
+Waiting for time synchronization to be correct within 50 ms.
+Current NTP time accuracy: 7961 ms.
+Current NTP time accuracy: 7941 ms.
+Current NTP time accuracy: 7941 ms.
+Current NTP time accuracy: 7941 ms.
+Current NTP time accuracy: 7941 ms.
+Current NTP time accuracy: 3951 ms.
+Current NTP time accuracy: 3951 ms.
+Current NTP time accuracy: 3951 ms.
+Current NTP time accuracy: 1946 ms.
+Current NTP time accuracy: 1946 ms.
+Current NTP time accuracy: 1946 ms.
+Current NTP time accuracy: 944 ms.
+Current NTP time accuracy: 945 ms.
+Current NTP time accuracy: 945 ms.
+Current NTP time accuracy: 444 ms.
+Current NTP time accuracy: 444 ms.
+Current NTP time accuracy: 444 ms.
+Current NTP time accuracy: 193 ms.
+Current NTP time accuracy: 193 ms.
+Current NTP time accuracy: 193 ms.
+Current NTP time accuracy: 68 ms.
+Current NTP time accuracy: 68 ms.
+Current NTP time accuracy: 68 ms.
+Current NTP time accuracy: 68 ms.
+Current NTP time accuracy: 5 ms.
+Beginning main program at 2021-12-17 19:19:36.869029 UTC
+sdas program started!

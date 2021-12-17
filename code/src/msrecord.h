@@ -35,8 +35,9 @@ struct save2mseedfile_struct
     char slarchive_command[50];
     char save_option[5];
     char sl_port_host[50];
-    char save_dir[50];
-    char usb_location[50];
+    char mount_target[50]; // save directory
+    char mount_source[50]; // usb drive location
+    char mount_filesystem[10]; // filesystem to mount usb drive as
     int save_check;
 };
 

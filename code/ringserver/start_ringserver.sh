@@ -3,8 +3,8 @@
 WORKING_DIR=.
 #cd $(WORKING_DIR $0)
 
-cd /home/raspi/sdas/code/ringserver
-
+#cd /home/raspi/sdas/code/ringserver
+cd /root/sdas/code/ringserver
 
 #echo $WORKING_DIR
 if [ ! -e "${WORKING_DIR}/log" ]; then

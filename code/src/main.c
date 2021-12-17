@@ -117,7 +117,7 @@ int main()
 {	
 	
 	// open log file
-    fp_log = fopen("digitizer.log", "w");
+    fp_log = fopen("/root/sdas/code/log/digitizer.log", "w");
     if (fp_log == NULL)
     {
         printf("Cannot create log file. Program exiting.\n");
@@ -142,7 +142,7 @@ int main()
      * If the connection fails, the program exits and is restarted.
      * hostname = localhost, port = 16000
     */
-
+	
     if (connect_dl_server(&dlconn, fp_log) != 1)
     {
         fprintf(fp_log, "%s: Failed to connect to DL server. Please try again.\n", get_log_time());
@@ -274,7 +274,7 @@ int main()
         free_timestamp_buffer(&timestamp_queue);
         // Free msr struct
         msrecord_free();
-        // Free DL descriptor and disconnect
+        // Free DUSB drive mount source is not definedL descriptor and disconnect
         dlconn_free();
         // close serial port
         close_serial();
@@ -366,47 +366,27 @@ int main()
 	if (save_2_mseed_file.save_check)
 	{
 		fprintf(fp_log, "%s: Saving data to mseed files option selected. Setting up save directories....\n", get_log_time());
-		// create save directory
-		fprintf(fp_log, "%s: Creating save directory: %s\n", get_log_time(), save_2_mseed_file.save_dir);
-		if (mkdir(save_2_mseed_file.save_dir, 0777))
+		
+		// Create save directory
+		fprintf(fp_log, "%s: Creating save directory: %s\n", get_log_time(), save_2_mseed_file.mount_target);
+		if (mkdir(save_2_mseed_file.mount_target, 0777))
 		{
+			// Save directory exists
 			if (errno == EEXIST)
-				fprintf(fp_log, "%s: Save directory %s exist.\n",get_log_time(), save_2_mseed_file.save_dir);
+				fprintf(fp_log, "%s: Save directory %s exist.\n",get_log_time(), save_2_mseed_file.mount_target);
+			// Error creating save directory
 			else
 			{
 				fprintf(fp_log, "%s: Error: %s\n",get_log_time(), strerror(errno));
-				fprintf(fp_log, "%s: Error  creating save directory %s. Data will only be stored in ring buffer.\n", get_log_time(), save_2_mseed_file.save_dir);
+				fprintf(fp_log, "%s: Error  creating save directory %s. Data will only be stored in ring buffer.\n", get_log_time(), save_2_mseed_file.mount_target);
+				// Set save check to 0 since we will not being save data to mseed files
 				save_2_mseed_file.save_check = 0;
 			}
 		}
 		else
-			fprintf(fp_log, "%s: Save directory %s created!\n", get_log_time(), save_2_mseed_file.save_dir);
-	
-		
-		// mount usb drive to save directory
-		if (save_2_mseed_file.save_check == 1)
-		{
-			fprintf(fp_log, "%s: Attempting to mount usb drive to save directory.\n", get_log_time());
-			if (mount(save_2_mseed_file.usb_location, save_2_mseed_file.save_dir, "ext4", MS_NOATIME, NULL))
-			{
-				if (errno == EBUSY)
-				{
-					fprintf(fp_log, "%s: Mountpoint busy, possibly already mounted.\n", get_log_time());
-					fprintf(fp_log, "%s: Data will be stored on a storage device located at %s.\n", get_log_time(), save_2_mseed_file.save_dir);
-				}
-				else
-				{
-					fprintf(fp_log, "%s: Mount error: %s\n",get_log_time(), strerror(errno));
-					fprintf(fp_log, "%s: Error mounting data storage device to %s. Data will only be stored in ring buffer.\n", get_log_time(), save_2_mseed_file.save_dir);
-					save_2_mseed_file.save_check = 0;
-				}
-			}
-			else
-			{
-				fprintf(fp_log, "%s: Mount successful! Data will be stored on a storage device located at %s.\n", get_log_time(), save_2_mseed_file.save_dir);
-			}	
-		}
+			fprintf(fp_log, "%s: Save directory %s created!\n", get_log_time(), save_2_mseed_file.mount_target);
 	}
+	
 	fprintf(fp_log, "\n");
 
 	///////////////////////////////////////////////////////////////////
@@ -497,6 +477,8 @@ void free_data_buffer_samples(void)
 
 void *read_serial_buffer(void *arg)
 {
+	int sample_counter = 0;
+    
     while(stop_read_serial_buffer_thread == 1)
     {
         //if (stop_read_serial_buffer_thread == 1)
@@ -507,37 +489,40 @@ void *read_serial_buffer(void *arg)
             // Arduino still initializing
             continue;
         }
-        //printf("%s\n", serial_data);
-        //printf("%s\n", serial_data);
-        if (strcmp(serial_data, "*") == 0)
-        {
-
+        //if (strcmp(serial_data, "*") == 0)
+        //{
+    
             //pthread_mutex_lock(&lock_timestamp);
             // time stored in global variable hptime_start
-            *hptime_p = current_utc_hptime();// time for mseed records
+          //  *hptime_p = current_utc_hptime();// time for mseed records
             //printf("%lld\n", hptime_start);
-           // ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
+            //ms_hptime2isotimestr(hptime_start-hptime_temp, date_time, 1);
             //hptime_temp = hptime_start;
             //printf("%s    ", date_time);
             
-            hptime_start = starttime_correction(hptime_start, 0.005);
-            //ms_hptime2isotimestr(hptime_start, date_time, 1);
-            //printf("%s\n", date_time);
-            
-            int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
-            if(insert_timestamp_queue_rv == -1)
-            {
-                // What to do if fail to be placed inside of queue ?
-                fprintf(fp_log, "%s: Error inserting timestamp into queue\n", get_log_time());
-                fflush(fp_log);
-                exit(0);
-            }
             //pthread_cond_signal(&cond1);
             //pthread_mutex_unlock(&lock_timestamp);
-        }
-        //printf("%s\n", serial_data);
-        else
+       // }
+        else // data sample to be read
         {
+            if (sample_counter == 0 || sample_counter == 200)
+            {
+                *hptime_p = current_utc_hptime();// time for mseed records
+                hptime_start = starttime_correction(hptime_start, 0.005);
+                int insert_timestamp_queue_rv = insert_timestamp_queue(timestamp_queue, hptime_start, fp_log);
+                if(insert_timestamp_queue_rv == -1)
+                {
+                    // What to do if fail to be placed inside of queue ?
+                    fprintf(fp_log, "%s: Error inserting timestamp into queue\n", get_log_time());
+                    fflush(fp_log);
+                    exit(0);
+                }
+                //ms_hptime2isotimestr(hptime_start, date_time, 1);
+                //printf("%s\n", date_time);
+                
+                sample_counter = 0;
+            }
+            
             if (insert_data_buffer(data_queue, serial_data, fp_log) == -1)
             {
                 fprintf(fp_log, "%s: Failed to allocate memory to store sample in buffer. Potential memory issue. Fix and reboot program.\n", get_log_time());
@@ -545,9 +530,8 @@ void *read_serial_buffer(void *arg)
                 //printf("failed to insert into buffer\n");
                 exit(0); // hard kill program. Need something better.
             }
+            sample_counter ++; //update sample counter after inserting sample into queue
         }
-
-        //}
     }
     return NULL;
 }
@@ -619,23 +603,33 @@ int parse_config_file()
         return -1;
     }
 
-    // data save location
-    if (config_lookup_string(cf, "save2mseedparams.datasavelocation", &temp))
-        strcpy(save_2_mseed_file.save_dir, temp);
+    // mount target
+    if (config_lookup_string(cf, "save2mseedparams.mounttarget", &temp))
+        strcpy(save_2_mseed_file.mount_target, temp);
     else
     {
-        fprintf(fp_log, "%s: save directory is not defined.\n", get_log_time());
+        fprintf(fp_log, "%s: Mount target (save directory) is not defined.\n", get_log_time());
         return -1;
     }
 
-	// usb location
-    if (config_lookup_string(cf, "save2mseedparams.usblocation", &temp))
-        strcpy(save_2_mseed_file.usb_location, temp);
+	// mount source
+    if (config_lookup_string(cf, "save2mseedparams.mountsource", &temp))
+        strcpy(save_2_mseed_file.mount_source, temp);
     else
     {
-        fprintf(fp_log, "%s: USB location is not defined.\n", get_log_time());
+        fprintf(fp_log, "%s: USB drive mount source is not defined.\n", get_log_time());
         return -1;
     }
+    
+    // filesystem
+    if (config_lookup_string(cf, "save2mseedparams.mountfilesystem", &temp))
+        strcpy(save_2_mseed_file.mount_filesystem, temp);
+    else
+    {
+        fprintf(fp_log, "%s: Mount filesystem is not defined.\n", get_log_time());
+        return -1;
+    }
+    
     // save 2 mseed file flag (or save check)
     int temp_save_check;
     if (config_lookup_int(cf, "save2mseedparams.savecheck", &temp_save_check))

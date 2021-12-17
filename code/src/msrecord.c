@@ -126,7 +126,7 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_members_struc
     int save_command_length = strlen(save_2_mseed_file->slarchive_command) +
                               strlen(save_2_mseed_file->save_option) +
                               strlen(save_2_mseed_file->sl_port_host) +
-                              strlen(save_2_mseed_file->save_dir) + 50;
+                              strlen(save_2_mseed_file->mount_target) + 50;
 
     // Begin Acquisition System
     fprintf(fp_log, "%s: Beginning acquisition system!\n", get_log_time());
@@ -234,10 +234,10 @@ int process_data(struct msrecord_struct *msrecord, struct msrecord_members_struc
                 {
                     // add check to make sure drive with save location is mounted
 
-                    fprintf(fp_log, "%s: Save routine time window: %s,%s,%s,%s,%s,%s:%s,%s,%s,%s,%s,%s\n", get_log_time(),
-                            starttime_save.year, starttime_save.month, starttime_save.day, starttime_save.hour,
-                            starttime_save.mins, starttime_save.sec, endtime_save.year, endtime_save.month,
-                            endtime_save.day, endtime_save.hour, endtime_save.mins, endtime_save.sec);
+                    //fprintf(fp_log, "%s: Save routine time window: %s,%s,%s,%s,%s,%s:%s,%s,%s,%s,%s,%s\n", get_log_time(),
+                      //      starttime_save.year, starttime_save.month, starttime_save.day, starttime_save.hour,
+                       //     starttime_save.mins, starttime_save.sec, endtime_save.year, endtime_save.month,
+                         //   endtime_save.day, endtime_save.hour, endtime_save.mins, endtime_save.sec);
 
                     fflush(fp_log);
 
@@ -469,6 +469,7 @@ void run_save_command(struct datetime *starttime_save, struct datetime *endtime_
     char save_command[save_command_length];
     strcpy(save_command, save_2_mseed_file->slarchive_command);
     strcat(save_command, " ");
+    
     strcat(save_command, starttime_save->year);
     strcat(save_command, ",");
     strcat(save_command, starttime_save->month);
@@ -494,14 +495,19 @@ void run_save_command(struct datetime *starttime_save, struct datetime *endtime_
     strcat(save_command, endtime_save->sec);
     strcat(save_command, " ");
 
-    strcat(save_command, save_2_mseed_file->save_option);
+	strcat(save_command, save_2_mseed_file->mount_source);
+	strcat(save_command, " ");
+	
+    strcat(save_command, save_2_mseed_file->mount_target);
     strcat(save_command, " ");
-    strcat(save_command, save_2_mseed_file->save_dir);
+    
+    strcat(save_command, "ext4");
     strcat(save_command, " ");
-    strcat(save_command, save_2_mseed_file->sl_port_host);
-    strcat(save_command, " ");
+    
     strcat(save_command, "&");
     // call save command
+    //printf("%s\n", save_command);
+    //exit(0);
     system(save_command);
 } /* end of run_save_command() */
 

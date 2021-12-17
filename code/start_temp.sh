@@ -2,7 +2,8 @@
 
 WORKING_DIR=.
 
-cd /home/raspi/sdas/code
+#cd /home/raspi/sdas/code
+cd /root/sdas/code
 #cp bin/Debug/Version4 . not really necessary
 
 

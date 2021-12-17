@@ -154,7 +154,8 @@ void loop()
 {
   if (digitalRead(ADS1220_DRDY_PIN_1) == LOW && digitalRead(ADS1220_DRDY_PIN_2) == LOW  && digitalRead(ADS1220_DRDY_PIN_3) == LOW)
   {
-  
+	  readData(true);
+	/**
     if (sample_counter == 2)// 200 SPS
       readData(true);
     else
@@ -168,7 +169,7 @@ void loop()
   if (counter == 200)
   {
     Serial.println("*");//////////////////////////////////////////
-    counter = 0;
+    counter = 0;*/
   }
   
 }// end loop

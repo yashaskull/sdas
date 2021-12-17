@@ -7,9 +7,9 @@ import timeout_decorator
 import datetime
 
 # directory path
-home_dir = "/home/pi" # non root home directory
-ringserver_dir = "/home/pi/sdas/code/ringserver"
-arduino_dir = "/home/pi/sdas/arduino"
+home_dir = "/root" # non root home directory
+ringserver_dir = "/root/sdas/code/ringserver"
+arduino_dir = "/root/sdas/arduino"
 
 time_threshold = 50 # ms
 
@@ -44,10 +44,10 @@ def startup_routine():
 	startup_log.flush()
 	
 	# delete packet buf and streamidx if exists
-	if (os.path_isfile(ringserver_dir + "/ringserver_store/ring/packetbuf"))
+	if (os.path.isfile(ringserver_dir + "/ringserver_store/ring/packetbuf")):
 		os.system("rm " + ringserver_dir + "/ringserver_store/ring/packetbuf")
 		
-	if (os.path_isfile(ringserver_dir + "/ringserver_store/ring/streamidx"))
+	if (os.path.isfile(ringserver_dir + "/ringserver_store/ring/streamidx")):
 		os.system("rm " + ringserver_dir + "/ringserver_store/ring/streamidx")
 		
 	# execute script to start ringserver
@@ -165,7 +165,7 @@ def run_arduino():
 	#print(out)
 	strs = str(out)
 	
-	proc = Popen("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega+ "+arduino_dir+"/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
+	proc = Popen("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega "+arduino_dir+"/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	return [out, err, proc.returncode, strs]
 	

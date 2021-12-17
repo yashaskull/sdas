@@ -56,8 +56,8 @@ static DSArchive *dsarchive;
 
 /***************************************ADDED*****************************************/
 const char *save_dir = NULL; // specify directory where files will be stored
-char *slconn_host = "192.168.254.207:18000"; // specify host and port of seedlink server
-char *save2mseed_log = "../log/save2mseed.log";
+char *slconn_host = "localhost:18000"; // specify host and port of seedlink server
+char *save2mseed_log = "/root/sdas/code/log/save2mseed.log";
 FILE *fp_log;
 /*************************************************************************************/
 
@@ -78,6 +78,7 @@ main (int argc, char **argv)
   /***********************************************************************/
   fprintf(fp_log, "Beginning save routine\n");
   fprintf(fp_log, "Time window: %s\n", argv[1]);
+
   
   SLpacket *slpack;
   int seqnum;
@@ -434,7 +435,8 @@ parameter_proc (int argcount, char **argvec)
   timewin = argvec[1];// time window
   // update slconn with host and port
   slconn->sladdr = slconn_host;
-  
+
+	//printf("%s\n", save_dir);  
   // add archive (save directory)
   addarchive(save_dir, CSSLAYOUT);
   /////////////////////////////////////////
