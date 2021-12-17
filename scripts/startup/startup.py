@@ -23,7 +23,7 @@ def startup_routine():
 	startup_log.write("Attempting to start ntp server...\n")
 	#os.system("rm /usr/sbin/ntpd")
 	#os.system("cp /home/raspi/sdas/ntp/ntpd /usr/sbin/ntpd")
-	proc = Popen("service ntp restart", shell=True,stdout=PIPE, stderr=PIPE)
+	proc = Popen("/usr/sbin/service ntp restart", shell=True,stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	exitcode=proc.returncode
 	if (exitcode != 0):
@@ -72,8 +72,8 @@ def startup_routine():
 	# compile arduino code
 	startup_log.write("Attempting to compile arduino code...\n")
 	startup_log.flush()
-	Popen("arduino-cli core update-index", shell=True,stdout=PIPE,stderr=PIPE)
-	proc = Popen("arduino-cli compile --fqbn arduino:avr:mega "+arduino_dir+"/3_channel", shell=True,stdout=PIPE, stderr=PIPE)
+	Popen("/usr/local/bin/arduino-cli core update-index", shell=True,stdout=PIPE,stderr=PIPE)
+	proc = Popen("/usr/local/bin/arduino-cli compile --fqbn arduino:avr:mega "+arduino_dir+"/3_channel", shell=True,stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	if (proc.returncode != 0):
 		startup_log.write("out: "+str(out)+"\n")			
@@ -165,14 +165,14 @@ def run_arduino():
 	#print(out)
 	strs = str(out)
 	
-	proc = Popen("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega "+arduino_dir+"/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
+	proc = Popen("/usr/local/bin/arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:mega "+arduino_dir+"/3_channel", shell=True, stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	return [out, err, proc.returncode, strs]
 	
 
 def ntp_status():
 	
-	proc = Popen(['ntpstat', '-q'], shell=True, stdout=PIPE, stderr=PIPE)
+	proc = Popen(['/usr/bin/ntpstat', '-q'], shell=True, stdout=PIPE, stderr=PIPE)
 	out,err = proc.communicate()
 	if (proc.returncode != 0):
 		startup_log.write("err: "+str(err)+" \n")
